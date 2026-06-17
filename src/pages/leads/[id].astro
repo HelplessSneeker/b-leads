@@ -7,6 +7,7 @@ import { db } from '~/db';
 import { LEAD_STATUSES, leads, replies } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
 import { formatDateTime } from '~/lib/date';
+import { getSources } from '~/lib/sources';
 
 const { id } = Astro.params;
 if (!id) return new Response('Not found', { status: 404 });
@@ -53,6 +54,7 @@ const value = (key: string, fallback: string) => {
 
 const selectedStatus = value('status', lead.status);
 const notesValue = value('notes', lead.notes ?? '');
+const sources = getSources();
 
 const fieldClass =
   'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
@@ -104,7 +106,8 @@ const errorClass = 'mt-1 text-sm text-red-600';
 
     <div>
       <label class={labelClass} for="source">Quelle</label>
-      <input id="source" name="source" type="text" value={value('source', lead.source)} class={fieldClass} />
+      <input id="source" name="source" type="text" value={value('source', lead.source)} class={fieldClass} list="sources" />
+      <datalist id="sources">{sources.map((s) => <option value={s} />)}</datalist>
       {fieldErrors?.source && <p class={errorClass}>{fieldErrors.source[0]}</p>}
     </div>
 
