@@ -40,6 +40,27 @@ const rows = db
   // lastTouchAt DESC NULLS LAST, then createdAt DESC. `is null` sorts nulls last.
   .orderBy(sql`${leads.lastTouchAt} is null`, desc(leads.lastTouchAt), desc(leads.createdAt))
   .all();
+
+// Total counts per status (unfiltered) for the stats widget.
+const statusCounts = db
+  .select({ status: leads.status, count: sql<number>`count(*)` })
+  .from(leads)
+  .groupBy(leads.status)
+  .all();
+const countByStatus = new Map(statusCounts.map((r) => [r.status, r.count]));
+
+// Link that toggles a status in the filter while preserving the search query.
+function statusToggleHref(status: LeadStatus): string {
+  const next = new Set(selectedStatuses);
+  if (next.has(status)) next.delete(status);
+  else next.add(status);
+  const params = new URLSearchParams();
+  const ordered = LEAD_STATUSES.filter((s) => next.has(s));
+  if (ordered.length) params.set('status', ordered.join(','));
+  if (q) params.set('q', q);
+  const qs = params.toString();
+  return qs ? `/leads?${qs}` : '/leads';
+}
 ---
 
 <Layout title="Leads · b-leads">
@@ -59,6 +80,31 @@ const rows = db
         Neuer Lead
       </a>
     </div>
+  </div>
+
+  <div class="mt-6 flex gap-2 overflow-x-auto pb-1">
+    {
+      LEAD_STATUSES.map((s) => {
+        const isActive = selectedStatuses.includes(s);
+        return (
+          <a
+            href={statusToggleHref(s)}
+            aria-pressed={isActive}
+            class:list={[
+              'flex min-w-[7rem] shrink-0 flex-col rounded border bg-white px-3 py-2',
+              isActive ? 'ring-2 ring-gray-900' : 'border-gray-200 hover:bg-gray-50',
+            ]}
+          >
+            <span
+              class={`self-start rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[s]}`}
+            >
+              {STATUS_LABELS[s]}
+            </span>
+            <span class="mt-1 text-2xl font-semibold text-gray-900">{countByStatus.get(s) ?? 0}</span>
+          </a>
+        );
+      })
+    }
   </div>
 
   <div class="mt-6">
