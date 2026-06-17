@@ -38,12 +38,16 @@ pnpm dev              # Dev-Server (http://localhost:4321)
 | `pnpm preview`     | Production-Build lokal starten                   |
 | `pnpm db:generate` | Drizzle-Migration aus `src/db/schema.ts`         |
 | `pnpm db:migrate`  | Migrationen anwenden                             |
-| `pnpm db:seed`     | Demo-Leads einspielen                            |
+| `pnpm db:seed`     | Demo-Leads einspielen (idempotent; `--reset` löscht vorher) |
 | `pnpm test`        | Vitest (einmalig)                                |
 | `pnpm test:watch`  | Vitest im Watch-Modus                            |
 | `pnpm lint`        | Biome Lint + Format-Check                        |
 | `pnpm format`      | Biome Format (schreibend)                        |
 | `pnpm check`       | `astro check` + Biome                            |
+
+> `pnpm db:seed` ist Default idempotent (existierende Emails werden übersprungen).
+> `pnpm db:seed --reset` löscht vorher alle Leads. Mit `NODE_ENV=production`
+> verweigert das Script den Lauf.
 
 ## Projektstruktur
 

@@ -59,7 +59,25 @@ const demoLeads: NewLead[] = [
   },
 ];
 
-db.delete(leads).run();
-const inserted = db.insert(leads).values(demoLeads).run();
+// Never run against a production database — a stray `pnpm db:seed` there would
+// either wipe real outreach data (--reset) or pollute it with demo rows.
+if (process.env.NODE_ENV === 'production') {
+  console.error('seed: refusing to run with NODE_ENV=production');
+  process.exit(1);
+}
 
-console.log(`Seeded ${inserted.changes} leads.`);
+// Opt-in destructive reset (old behavior). Default is idempotent: existing leads
+// (matched by unique email) are left untouched, only new demo rows are inserted.
+const reset = process.argv.includes('--reset');
+if (reset) {
+  console.warn('seed: --reset → deleting all existing leads');
+  db.delete(leads).run();
+}
+
+const result = db
+  .insert(leads)
+  .values(demoLeads)
+  .onConflictDoNothing({ target: leads.email })
+  .run();
+const skipped = demoLeads.length - result.changes;
+console.log(`seed: inserted ${result.changes} leads (skipped ${skipped} existing).`);
