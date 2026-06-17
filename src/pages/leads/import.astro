@@ -1,14 +1,24 @@
 ---
+import CsvImport from '~/components/CsvImport';
 import Layout from '~/layouts/Layout.astro';
 
-// Phase 1 TODO: CSV upload, column mapping UI, bulk insert via actions.importLeads.
+// CSV upload + client-side parsing/mapping; rows are POSTed to actions.importLeads.
 // Primary use: importing outreach-wave-1.
 ---
 
 <Layout title="CSV-Import · b-leads">
-  <h1 class="text-xl font-semibold">CSV-Import</h1>
-  <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-    Platzhalter — CSV-Upload + Spalten-Mapping + Bulk-Insert (Astro Action
-    <code>importLeads</code>) folgt in Phase 1.
+  <nav class="text-sm text-gray-500">
+    <a href="/leads" class="hover:text-gray-900">Leads</a>
+    <span class="px-1">/</span>
+    <span class="text-gray-900">CSV-Import</span>
+  </nav>
+  <h1 class="mt-2 text-xl font-semibold">CSV-Import</h1>
+  <p class="mt-2 max-w-xl text-sm text-gray-500">
+    Lade eine CSV-Datei hoch, ordne die Spalten den Lead-Feldern zu und importiere die Leads. Zeilen
+    mit bereits existierender E-Mail werden als Duplikate übersprungen.
   </p>
+
+  <div class="mt-6 max-w-3xl">
+    <CsvImport client:load />
+  </div>
 </Layout>

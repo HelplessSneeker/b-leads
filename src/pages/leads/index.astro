@@ -45,12 +45,20 @@ const rows = db
 <Layout title="Leads · b-leads">
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-semibold">Leads</h1>
-    <a
-      href="/leads/new"
-      class="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-    >
-      Neuer Lead
-    </a>
+    <div class="flex items-center gap-2">
+      <a
+        href="/leads/import"
+        class="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+      >
+        CSV-Import
+      </a>
+      <a
+        href="/leads/new"
+        class="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+      >
+        Neuer Lead
+      </a>
+    </div>
   </div>
 
   <div class="mt-6">

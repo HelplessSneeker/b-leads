@@ -113,18 +113,35 @@ export const server = {
   }),
 
   importLeads: defineAction({
-    accept: 'form',
-    input: z.object({
-      // CSV content + a JSON column mapping (header -> lead field).
-      csv: z.string().min(1),
-      mapping: z.string().min(1),
-    }),
-    handler: async (_input) => {
-      // TODO(Phase 1): parse CSV (parseCsv), apply mapping, bulk insert.
-      throw new ActionError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'importLeads — TODO Phase 1',
-      });
+    // The CSV is parsed + mapped client-side; we receive ready-to-insert rows.
+    accept: 'json',
+    input: z.array(
+      z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        company: z.string().optional(),
+        role: z.string().optional(),
+        source: z.string().min(1),
+        nextAction: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    ),
+    handler: async (rows) => {
+      let inserted = 0;
+      let duplicates = 0;
+      for (const row of rows) {
+        try {
+          createLeadCore(db, row);
+          inserted++;
+        } catch (err) {
+          if (err instanceof ConflictError) {
+            duplicates++;
+            continue;
+          }
+          return toActionError(err);
+        }
+      }
+      return { inserted, duplicates };
     },
   }),
 };

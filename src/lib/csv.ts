@@ -27,6 +27,7 @@ export const IMPORTABLE_LEAD_FIELDS = [
   'company',
   'role',
   'source',
+  'nextAction',
   'notes',
 ] as const;
 export type ImportableLeadField = (typeof IMPORTABLE_LEAD_FIELDS)[number];
