@@ -1,9 +1,11 @@
+import { eq } from 'drizzle-orm';
 import { db } from './index';
-import { leads, type NewLead } from './schema';
+import { activities, leads, type NewActivity, type NewLead } from './schema';
 
-// Synthetic demo leads for local development (no real data — the repo is public).
-// Covers several statuses so the list filter has something to work with. Touched
-// leads get a lastTouchAt so the "NULLS LAST" ordering and the detail page show data.
+// Synthetic demo data for local development (no real data — the repo is public).
+// Covers several statuses so the list filter has something to work with, and a mix
+// of activity types so the timeline + stats widgets show data. Each lead's
+// lastTouchAt is recomputed from its activities (the new source of truth).
 const now = Date.now();
 const daysAgo = (d: number) => new Date(now - d * 24 * 60 * 60 * 1000);
 
@@ -17,7 +19,6 @@ const demoLeads: NewLead[] = [
     status: 'contacted',
     nextAction: 'Follow-up in 3 Tagen',
     notes: '# Notiz\n\nWeb-Relaunch geplant, **Astro** im Gespräch.',
-    lastTouchAt: daysAgo(1),
   },
   {
     name: 'Markus Huber',
@@ -27,7 +28,6 @@ const demoLeads: NewLead[] = [
     source: 'outreach-wave-1',
     status: 'replied',
     nextAction: 'Angebot schicken',
-    lastTouchAt: daysAgo(2),
   },
   {
     name: 'Sophie Klein',
@@ -45,7 +45,6 @@ const demoLeads: NewLead[] = [
     source: 'linkedin',
     status: 'qualified',
     nextAction: 'Termin vereinbaren',
-    lastTouchAt: daysAgo(5),
   },
   {
     name: 'Petra Wagner',
@@ -55,9 +54,65 @@ const demoLeads: NewLead[] = [
     source: 'referral',
     status: 'lost',
     notes: 'Budget für dieses Jahr aufgebraucht.',
-    lastTouchAt: daysAgo(14),
   },
 ];
+
+// Activities keyed by lead email — at least one of every ACTIVITY_TYPE, spread
+// across the demo leads. Sophie (status "new") intentionally has none, so her
+// lastTouchAt stays null and the "NULLS LAST" ordering is exercised.
+const demoActivities: Record<string, Omit<NewActivity, 'leadId'>[]> = {
+  'anna.berger@example.com': [
+    {
+      type: 'email_sent',
+      subject: 'Kurze Frage zum Web-Relaunch',
+      body: 'Hallo Anna, …',
+      occurredAt: daysAgo(4),
+    },
+    {
+      type: 'email_received',
+      subject: 'Re: Kurze Frage',
+      body: 'Klingt spannend, erzähl mehr!',
+      occurredAt: daysAgo(2),
+    },
+    { type: 'note', body: 'Bevorzugt Astro, Budget ~10k.', occurredAt: daysAgo(1) },
+  ],
+  'm.huber@example.com': [
+    {
+      type: 'linkedin_sent',
+      body: 'Vernetzungsanfrage + kurze Vorstellung.',
+      occurredAt: daysAgo(6),
+    },
+    { type: 'linkedin_received', body: 'Angenommen, gerne mehr Infos.', occurredAt: daysAgo(5) },
+    {
+      type: 'call',
+      subject: 'Erstgespräch',
+      body: '20 Min, Bedarf bestätigt.',
+      occurredAt: daysAgo(2),
+    },
+  ],
+  'lukas.maier@example.org': [
+    {
+      type: 'email_sent',
+      subject: 'Terminvorschlag',
+      body: 'Vorschlag für nächste Woche.',
+      occurredAt: daysAgo(8),
+    },
+    {
+      type: 'meeting',
+      subject: 'Discovery-Meeting',
+      body: 'Anforderungen aufgenommen.',
+      occurredAt: daysAgo(5),
+    },
+  ],
+  'p.wagner@example.net': [
+    { type: 'email_sent', subject: 'Angebot', body: 'Angebot versendet.', occurredAt: daysAgo(20) },
+    {
+      type: 'note',
+      body: 'Budget für dieses Jahr aufgebraucht — Q1 erneut versuchen.',
+      occurredAt: daysAgo(14),
+    },
+  ],
+};
 
 // Never run against a production database — a stray `pnpm db:seed` there would
 // either wipe real outreach data (--reset) or pollute it with demo rows.
@@ -81,3 +136,26 @@ const result = db
   .run();
 const skipped = demoLeads.length - result.changes;
 console.log(`seed: inserted ${result.changes} leads (skipped ${skipped} existing).`);
+
+// Attach activities + recompute lastTouchAt. Idempotent: a lead that already has
+// activities is left untouched, so re-running the seed does not duplicate them.
+let insertedActivities = 0;
+for (const [email, items] of Object.entries(demoActivities)) {
+  const lead = db.select().from(leads).where(eq(leads.email, email)).get();
+  if (!lead) continue;
+
+  const hasActivities = db.select().from(activities).where(eq(activities.leadId, lead.id)).get();
+  if (hasActivities) continue;
+
+  db.insert(activities)
+    .values(items.map((a) => ({ ...a, leadId: lead.id })))
+    .run();
+  insertedActivities += items.length;
+
+  const lastTouchAt = items.reduce<Date>(
+    (max, a) => (a.occurredAt && a.occurredAt > max ? a.occurredAt : max),
+    new Date(0),
+  );
+  db.update(leads).set({ lastTouchAt, updatedAt: new Date() }).where(eq(leads.id, lead.id)).run();
+}
+console.log(`seed: inserted ${insertedActivities} activities.`);

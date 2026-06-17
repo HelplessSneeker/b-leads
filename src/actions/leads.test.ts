@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { leads, replies } from '~/db/schema';
+import { leads } from '~/db/schema';
 import { ConflictError, createLead, deleteLead, NotFoundError, updateLead } from './leads';
 
 function freshDb() {
@@ -47,33 +47,11 @@ describe('updateLead', () => {
     db = freshDb();
   });
 
-  it('sets lastTouchAt when status changes new -> contacted', () => {
-    const lead = createLead(db, { name: 'A', email: 'a@example.com', source: 'test' });
-    expect(lead.lastTouchAt).toBeNull();
-
-    const updated = updateLead(db, {
-      id: lead.id,
-      name: 'A',
-      email: 'a@example.com',
-      source: 'test',
-      status: 'contacted',
-    });
-
-    expect(updated.lastTouchAt).toBeInstanceOf(Date);
-  });
-
-  it('leaves lastTouchAt unchanged when status stays contacted', () => {
-    // Seed an explicit lastTouchAt so the assertion is not subject to re-touching.
+  it('leaves lastTouchAt untouched (it is driven by activities now)', () => {
     const fixed = new Date('2025-01-01T10:00:00Z');
     const [lead] = db
       .insert(leads)
-      .values({
-        name: 'A',
-        email: 'a@example.com',
-        source: 'test',
-        status: 'contacted',
-        lastTouchAt: fixed,
-      })
+      .values({ name: 'A', email: 'a@example.com', source: 'test', lastTouchAt: fixed })
       .returning()
       .all();
 
@@ -116,15 +94,17 @@ describe('deleteLead', () => {
     db = freshDb();
   });
 
-  it('removes the lead and cascades its replies', () => {
+  it('removes the lead', () => {
     const lead = createLead(db, { name: 'A', email: 'a@example.com', source: 'test' });
-    db.insert(replies)
-      .values({ leadId: lead.id, direction: 'inbound', subject: 'Re: Hi', body: 'Hello' })
-      .run();
 
     deleteLead(db, { id: lead.id });
 
     expect(db.select().from(leads).where(eq(leads.id, lead.id)).get()).toBeUndefined();
-    expect(db.select().from(replies).where(eq(replies.leadId, lead.id)).all()).toHaveLength(0);
+  });
+
+  it('throws NotFoundError for an unknown id', () => {
+    expect(() => deleteLead(db, { id: '00000000-0000-0000-0000-000000000000' })).toThrow(
+      NotFoundError,
+    );
   });
 });

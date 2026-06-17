@@ -1,7 +1,11 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
 import { db } from '~/db';
-import { LEAD_STATUSES } from '~/db/schema';
+import { ACTIVITY_TYPES, LEAD_STATUSES } from '~/db/schema';
+import {
+  createActivity as createActivityCore,
+  deleteActivity as deleteActivityCore,
+} from './activities';
 import {
   ConflictError,
   createLead as createLeadCore,
@@ -75,19 +79,69 @@ export const server = {
     },
   }),
 
-  importLeads: defineAction({
+  createActivity: defineAction({
     accept: 'form',
     input: z.object({
-      // CSV content + a JSON column mapping (header -> lead field).
-      csv: z.string().min(1),
-      mapping: z.string().min(1),
+      leadId: z.string().uuid(),
+      type: z.enum(ACTIVITY_TYPES),
+      // datetime-local sends an ISO-ish string; coerce it to a Date.
+      occurredAt: z.coerce.date(),
+      subject: z.string().optional(),
+      body: z.string().min(1, 'Inhalt ist erforderlich'),
     }),
-    handler: async (_input) => {
-      // TODO(Phase 1): parse CSV (parseCsv), apply mapping, bulk insert.
-      throw new ActionError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'importLeads — TODO Phase 1',
-      });
+    handler: async (input) => {
+      try {
+        const activity = createActivityCore(db, input);
+        return { id: activity.id };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  deleteActivity: defineAction({
+    accept: 'form',
+    input: z.object({ id: z.string().uuid() }),
+    handler: async (input) => {
+      try {
+        deleteActivityCore(db, input);
+        return { success: true };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  importLeads: defineAction({
+    // The CSV is parsed + mapped client-side; we receive ready-to-insert rows.
+    accept: 'json',
+    input: z.array(
+      z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        company: z.string().optional(),
+        role: z.string().optional(),
+        source: z.string().min(1),
+        nextAction: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    ),
+    handler: async (rows) => {
+      let inserted = 0;
+      let duplicates = 0;
+      for (const row of rows) {
+        try {
+          createLeadCore(db, row);
+          inserted++;
+        } catch (err) {
+          if (err instanceof ConflictError) {
+            duplicates++;
+            continue;
+          }
+          return toActionError(err);
+        }
+      }
+      return { inserted, duplicates };
     },
   }),
 };

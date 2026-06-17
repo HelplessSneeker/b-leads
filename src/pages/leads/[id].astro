@@ -1,10 +1,11 @@
 ---
 import { actions, isInputError } from 'astro:actions';
 import { desc, eq } from 'drizzle-orm';
+import { ACTIVITY_TYPE_CLASSES, ACTIVITY_TYPE_LABELS } from '~/components/activityType';
 import { STATUS_LABELS } from '~/components/leadStatus';
 import NotesEditor from '~/components/NotesEditor';
 import { db } from '~/db';
-import { LEAD_STATUSES, leads, replies } from '~/db/schema';
+import { ACTIVITY_TYPES, activities, LEAD_STATUSES, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
 import { formatDateTime } from '~/lib/date';
 import { getSources } from '~/lib/sources';
@@ -14,19 +15,23 @@ if (!id) return new Response('Not found', { status: 404 });
 
 const updateResult = Astro.getActionResult(actions.updateLead);
 const deleteResult = Astro.getActionResult(actions.deleteLead);
+const createActivityResult = Astro.getActionResult(actions.createActivity);
+const deleteActivityResult = Astro.getActionResult(actions.deleteActivity);
 
 // PRG: redirect after a successful mutation so a reload doesn't resubmit.
 if (deleteResult && !deleteResult.error) return Astro.redirect('/leads', 303);
 if (updateResult && !updateResult.error) return Astro.redirect(`/leads/${id}`, 303);
+if (createActivityResult && !createActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
+if (deleteActivityResult && !deleteActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
 
 const lead = db.select().from(leads).where(eq(leads.id, id)).get();
 if (!lead) return new Response('Not found', { status: 404 });
 
-const leadReplies = db
+const leadActivities = db
   .select()
-  .from(replies)
-  .where(eq(replies.leadId, id))
-  .orderBy(desc(replies.createdAt))
+  .from(activities)
+  .where(eq(activities.leadId, id))
+  .orderBy(desc(activities.occurredAt))
   .all();
 
 // On a failed update, keep what the user typed (middleware parsed a clone, so the
@@ -55,6 +60,17 @@ const value = (key: string, fallback: string) => {
 const selectedStatus = value('status', lead.status);
 const notesValue = value('notes', lead.notes ?? '');
 const sources = getSources();
+
+// Activity form: validation errors + a "now" default for the datetime-local input.
+const activityErrors =
+  createActivityResult && isInputError(createActivityResult.error)
+    ? createActivityResult.error.fields
+    : undefined;
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const d = new Date();
+const nowLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const selectedType = value('type', 'email_sent');
 
 const fieldClass =
   'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
@@ -159,10 +175,108 @@ const errorClass = 'mt-1 text-sm text-red-600';
   </section>
 
   <section class="mt-8 max-w-xl">
-    <h2 class="font-medium text-gray-900">Antworten ({leadReplies.length})</h2>
-    <p class="mt-2 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-      Noch keine Antworten — IMAP-Sync kommt in Phase 2.
-    </p>
+    <h2 class="font-medium text-gray-900">Aktivitäten ({leadActivities.length})</h2>
+
+    <form
+      method="POST"
+      action={actions.createActivity}
+      class="mt-4 space-y-3 rounded border border-gray-200 bg-white p-4"
+    >
+      <input type="hidden" name="leadId" value={lead.id} />
+      <h3 class="text-sm font-medium text-gray-900">Aktivität hinzufügen</h3>
+
+      <div class="flex flex-wrap gap-3">
+        <div class="flex-1">
+          <label class={labelClass} for="type">Typ</label>
+          <select id="type" name="type" class={fieldClass}>
+            {
+              ACTIVITY_TYPES.map((t) => (
+                <option value={t} selected={t === selectedType}>
+                  {ACTIVITY_TYPE_LABELS[t]}
+                </option>
+              ))
+            }
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class={labelClass} for="occurredAt">Zeitpunkt</label>
+          <input
+            id="occurredAt"
+            name="occurredAt"
+            type="datetime-local"
+            value={value('occurredAt', nowLocal)}
+            class={fieldClass}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class={labelClass} for="subject">Betreff (optional)</label>
+        <input
+          id="subject"
+          name="subject"
+          type="text"
+          value={value('subject', '')}
+          class={fieldClass}
+        />
+      </div>
+
+      <div>
+        <label class={labelClass} for="body">Inhalt</label>
+        <textarea id="body" name="body" rows="3" class={fieldClass}>{value('body', '')}</textarea>
+        {activityErrors?.body && <p class={errorClass}>{activityErrors.body[0]}</p>}
+      </div>
+
+      <button
+        type="submit"
+        class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+      >
+        Hinzufügen
+      </button>
+    </form>
+
+    {
+      leadActivities.length === 0 ? (
+        <p class="mt-4 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+          Noch keine Aktivitäten.
+        </p>
+      ) : (
+        <ol class="mt-4 space-y-3">
+          {leadActivities.map((activity) => (
+            <li class="rounded border border-gray-200 bg-white p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <span
+                    class={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTIVITY_TYPE_CLASSES[activity.type]}`}
+                  >
+                    {ACTIVITY_TYPE_LABELS[activity.type]}
+                  </span>
+                  <span class="text-xs text-gray-500">{formatDateTime(activity.occurredAt)}</span>
+                </div>
+                <form
+                  method="POST"
+                  action={actions.deleteActivity}
+                  onsubmit="return confirm('Aktivität wirklich löschen?')"
+                >
+                  <input type="hidden" name="id" value={activity.id} />
+                  <button
+                    type="submit"
+                    class="text-xs font-medium text-red-600 hover:text-red-800"
+                    aria-label="Aktivität löschen"
+                  >
+                    Löschen
+                  </button>
+                </form>
+              </div>
+              {activity.subject && (
+                <p class="mt-2 text-sm font-medium text-gray-900">{activity.subject}</p>
+              )}
+              <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">{activity.body}</p>
+            </li>
+          ))}
+        </ol>
+      )
+    }
   </section>
 
   <section class="mt-8 max-w-xl border-t border-gray-200 pt-6">
