@@ -5,11 +5,19 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 export const LEAD_STATUSES = ['new', 'contacted', 'replied', 'qualified', 'won', 'lost'] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
-/** Direction of a reply relative to us. */
-export const REPLY_DIRECTIONS = ['inbound', 'outbound'] as const;
-export type ReplyDirection = (typeof REPLY_DIRECTIONS)[number];
+/** Kind of touchpoint logged against a lead. */
+export const ACTIVITY_TYPES = [
+  'email_sent',
+  'email_received',
+  'linkedin_sent',
+  'linkedin_received',
+  'call',
+  'meeting',
+  'note',
+] as const;
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
-/** Shape of the LLM classification stored as JSON on a reply (Phase 3). */
+/** Shape of the LLM classification stored as JSON on an activity (Phase 3). */
 export interface LlmClassification {
   sentiment: 'positive' | 'neutral' | 'negative';
   intent: 'interested' | 'pricing' | 'not-now' | 'no' | 'question' | 'other';
@@ -39,8 +47,8 @@ export const leads = sqliteTable(
   (table) => [index('leads_status_idx').on(table.status)],
 );
 
-export const replies = sqliteTable(
-  'replies',
+export const activities = sqliteTable(
+  'activities',
   {
     id: text('id')
       .primaryKey()
@@ -48,20 +56,20 @@ export const replies = sqliteTable(
     leadId: text('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
-    direction: text('direction', { enum: REPLY_DIRECTIONS }).notNull(),
-    subject: text('subject').notNull(),
+    type: text('type', { enum: ACTIVITY_TYPES }).notNull(),
+    // Calls/notes have no subject, so it is nullable; the body is always required.
+    subject: text('subject'),
     body: text('body').notNull(),
-    receivedAt: integer('received_at', { mode: 'timestamp' }),
-    sentAt: integer('sent_at', { mode: 'timestamp' }),
+    occurredAt: integer('occurred_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
     // { sentiment, intent, confidence } — filled in Phase 3
     llmClassification: text('llm_classification', { mode: 'json' }).$type<LlmClassification>(),
     llmDraft: text('llm_draft'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   },
-  (table) => [index('replies_lead_id_idx').on(table.leadId)],
+  (table) => [index('activities_lead_id_idx').on(table.leadId)],
 );
 
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
-export type Reply = typeof replies.$inferSelect;
-export type NewReply = typeof replies.$inferInsert;
+export type Activity = typeof activities.$inferSelect;
+export type NewActivity = typeof activities.$inferInsert;

@@ -1,7 +1,11 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
 import { db } from '~/db';
-import { LEAD_STATUSES } from '~/db/schema';
+import { ACTIVITY_TYPES, LEAD_STATUSES } from '~/db/schema';
+import {
+  createActivity as createActivityCore,
+  deleteActivity as deleteActivityCore,
+} from './activities';
 import {
   ConflictError,
   createLead as createLeadCore,
@@ -68,6 +72,39 @@ export const server = {
     handler: async (input) => {
       try {
         deleteLeadCore(db, input);
+        return { success: true };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  createActivity: defineAction({
+    accept: 'form',
+    input: z.object({
+      leadId: z.string().uuid(),
+      type: z.enum(ACTIVITY_TYPES),
+      // datetime-local sends an ISO-ish string; coerce it to a Date.
+      occurredAt: z.coerce.date(),
+      subject: z.string().optional(),
+      body: z.string().min(1, 'Inhalt ist erforderlich'),
+    }),
+    handler: async (input) => {
+      try {
+        const activity = createActivityCore(db, input);
+        return { id: activity.id };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  deleteActivity: defineAction({
+    accept: 'form',
+    input: z.object({ id: z.string().uuid() }),
+    handler: async (input) => {
+      try {
+        deleteActivityCore(db, input);
         return { success: true };
       } catch (err) {
         return toActionError(err);

@@ -4,7 +4,7 @@ import { desc, eq } from 'drizzle-orm';
 import { STATUS_LABELS } from '~/components/leadStatus';
 import NotesEditor from '~/components/NotesEditor';
 import { db } from '~/db';
-import { LEAD_STATUSES, leads, replies } from '~/db/schema';
+import { activities, LEAD_STATUSES, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
 import { formatDateTime } from '~/lib/date';
 import { getSources } from '~/lib/sources';
@@ -22,11 +22,11 @@ if (updateResult && !updateResult.error) return Astro.redirect(`/leads/${id}`, 3
 const lead = db.select().from(leads).where(eq(leads.id, id)).get();
 if (!lead) return new Response('Not found', { status: 404 });
 
-const leadReplies = db
+const leadActivities = db
   .select()
-  .from(replies)
-  .where(eq(replies.leadId, id))
-  .orderBy(desc(replies.createdAt))
+  .from(activities)
+  .where(eq(activities.leadId, id))
+  .orderBy(desc(activities.occurredAt))
   .all();
 
 // On a failed update, keep what the user typed (middleware parsed a clone, so the
@@ -159,9 +159,9 @@ const errorClass = 'mt-1 text-sm text-red-600';
   </section>
 
   <section class="mt-8 max-w-xl">
-    <h2 class="font-medium text-gray-900">Antworten ({leadReplies.length})</h2>
+    <h2 class="font-medium text-gray-900">Aktivitäten ({leadActivities.length})</h2>
     <p class="mt-2 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-      Noch keine Antworten — IMAP-Sync kommt in Phase 2.
+      Activity-Logging-UI folgt in Kürze.
     </p>
   </section>
 

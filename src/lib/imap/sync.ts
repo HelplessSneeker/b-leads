@@ -1,5 +1,5 @@
-// Phase 2: poll the configured IMAP mailbox and attach inbound replies to
-// matching leads (by From address). Skeleton only — no implementation yet.
+// Phase 2: poll the configured IMAP mailbox and attach received emails as
+// activities to matching leads (by From address). Skeleton only — no implementation yet.
 //
 // import { ImapFlow } from 'imapflow';
 
@@ -25,13 +25,13 @@ export function getImapConfig(): ImapConfig | null {
 }
 
 /**
- * Polls the inbox for new messages and stores them as inbound replies.
+ * Polls the inbox for new messages and stores them as `email_received` activities.
  *
  * Phase 2 TODO:
  *  - connect with ImapFlow(getImapConfig())
  *  - fetch UNSEEN since last sync, parse From/Subject/Body
- *  - match sender to a lead by email, insert into `replies` (direction: inbound)
- *  - advance lead status new/contacted -> replied, set last_touch_at
+ *  - match sender to a lead by email, insert into `activities` (type: 'email_received')
+ *  - advance lead status new/contacted -> replied (lastTouchAt follows the activity)
  *  - mark processed; persist a sync cursor
  *
  * Cron hook: call this on an interval (e.g. node-cron or Coolify scheduled

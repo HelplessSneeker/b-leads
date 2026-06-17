@@ -52,9 +52,6 @@ export interface LeadFields {
 export type CreateLeadInput = LeadFields;
 export type UpdateLeadInput = LeadFields & { id: string };
 
-/** Statuses whose (re-)entry counts as "touching" the lead. */
-const TOUCH_STATUSES: readonly LeadStatus[] = ['contacted', 'replied'];
-
 export function createLead<S extends Record<string, unknown>>(
   db: LeadsDb<S>,
   input: CreateLeadInput,
@@ -88,9 +85,7 @@ export function updateLead<S extends Record<string, unknown>>(
   if (!existing) throw new NotFoundError();
 
   const nextStatus = input.status ?? existing.status;
-  // Bump lastTouchAt only when the status changes *into* contacted/replied.
-  const enteringTouchStatus = nextStatus !== existing.status && TOUCH_STATUSES.includes(nextStatus);
-  const lastTouchAt = enteringTouchStatus ? new Date() : existing.lastTouchAt;
+  // lastTouchAt is driven exclusively by activities now — leave it untouched here.
 
   try {
     return db
@@ -104,7 +99,6 @@ export function updateLead<S extends Record<string, unknown>>(
         status: nextStatus,
         nextAction: input.nextAction,
         notes: input.notes,
-        lastTouchAt,
         updatedAt: new Date(),
       })
       .where(eq(leads.id, input.id))
@@ -122,5 +116,5 @@ export function deleteLead<S extends Record<string, unknown>>(
 ): void {
   const result = db.delete(leads).where(eq(leads.id, input.id)).run();
   if (result.changes === 0) throw new NotFoundError();
-  // Replies cascade via the FK (requires `PRAGMA foreign_keys = ON`).
+  // Activities cascade via the FK (requires `PRAGMA foreign_keys = ON`).
 }
