@@ -1,0 +1,52 @@
+---
+import '~/styles/global.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'b-leads' } = Astro.props;
+const { pathname } = Astro.url;
+
+const nav = [
+  { href: '/leads', label: 'Leads' },
+  { href: '/leads/new', label: 'Neuer Lead' },
+  { href: '/leads/import', label: 'CSV-Import' },
+];
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <header class="border-b border-gray-200 bg-white">
+      <nav class="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
+        <a href="/leads" class="font-semibold">b-leads</a>
+        <ul class="flex gap-4 text-sm">
+          {
+            nav.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  class:list={[
+                    'hover:text-gray-900',
+                    pathname === item.href ? 'text-gray-900 font-medium' : 'text-gray-500',
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </header>
+    <main class="mx-auto max-w-5xl px-4 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

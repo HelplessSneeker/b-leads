@@ -1,0 +1,50 @@
+{
+  "name": "b-leads",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lead-Tracking-/CRM-Tool für eigenen Cold-Outreach (single-user, Tailscale-only)",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "check": "astro check && biome check ."
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.1.4",
+    "@astrojs/react": "^5.0.7",
+    "@tailwindcss/vite": "^4.3.1",
+    "astro": "^6.4.7",
+    "better-sqlite3": "^12.11.1",
+    "drizzle-orm": "^0.45.2",
+    "imapflow": "^1.4.1",
+    "marked": "^18.0.5",
+    "openai": "^6.42.0",
+    "papaparse": "^5.5.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwindcss": "^4.3.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@biomejs/biome": "^2.5.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.3",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}

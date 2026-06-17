@@ -1,0 +1,21 @@
+---
+import Layout from '~/layouts/Layout.astro';
+
+// Phase 1 TODO: load leads from db, render table, mount <LeadsFilter client:load />.
+---
+
+<Layout title="Leads · b-leads">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">Leads</h1>
+    <a
+      href="/leads/new"
+      class="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+    >
+      Neuer Lead
+    </a>
+  </div>
+
+  <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+    Platzhalter — Leads-Tabelle mit Filter/Suche (React Island) folgt in Phase 1.
+  </p>
+</Layout>

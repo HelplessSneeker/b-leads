@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# database (local SQLite files)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs / os
+*.log
+.DS_Store
