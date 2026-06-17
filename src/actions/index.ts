@@ -1,9 +1,28 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
+import { db } from '~/db';
 import { LEAD_STATUSES } from '~/db/schema';
+import {
+  ConflictError,
+  createLead as createLeadCore,
+  deleteLead as deleteLeadCore,
+  NotFoundError,
+  updateLead as updateLeadCore,
+} from './leads';
 
-// Phase 1 logic is implemented after scaffold review. The Zod input schemas are
-// defined now so the wiring is in place; handler bodies are intentional stubs.
+// Thin Action adapters: validate via Zod, call the pure CRUD functions in
+// ./leads with the db singleton, and translate domain errors into ActionError.
+
+/** Map a domain error from ./leads onto the matching ActionError, else rethrow. */
+function toActionError(err: unknown): never {
+  if (err instanceof ConflictError) {
+    throw new ActionError({ code: 'CONFLICT', message: err.message });
+  }
+  if (err instanceof NotFoundError) {
+    throw new ActionError({ code: 'NOT_FOUND', message: err.message });
+  }
+  throw err;
+}
 
 const leadInput = z.object({
   name: z.string().min(1, 'Name ist erforderlich'),
@@ -20,36 +39,39 @@ export const server = {
   createLead: defineAction({
     accept: 'form',
     input: leadInput,
-    handler: async (_input) => {
-      // TODO(Phase 1): insert into leads, return new id.
-      throw new ActionError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'createLead — TODO Phase 1',
-      });
+    handler: async (input) => {
+      try {
+        const lead = createLeadCore(db, input);
+        return { id: lead.id };
+      } catch (err) {
+        return toActionError(err);
+      }
     },
   }),
 
   updateLead: defineAction({
     accept: 'form',
     input: leadInput.extend({ id: z.string().uuid() }),
-    handler: async (_input) => {
-      // TODO(Phase 1): update lead by id, bump updated_at.
-      throw new ActionError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'updateLead — TODO Phase 1',
-      });
+    handler: async (input) => {
+      try {
+        const lead = updateLeadCore(db, input);
+        return { id: lead.id };
+      } catch (err) {
+        return toActionError(err);
+      }
     },
   }),
 
   deleteLead: defineAction({
     accept: 'form',
     input: z.object({ id: z.string().uuid() }),
-    handler: async (_input) => {
-      // TODO(Phase 1): delete lead by id (replies cascade).
-      throw new ActionError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'deleteLead — TODO Phase 1',
-      });
+    handler: async (input) => {
+      try {
+        deleteLeadCore(db, input);
+        return { success: true };
+      } catch (err) {
+        return toActionError(err);
+      }
     },
   }),
 

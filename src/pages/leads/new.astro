@@ -1,12 +1,137 @@
 ---
+import { actions, isInputError } from 'astro:actions';
+import { eq } from 'drizzle-orm';
+import { STATUS_LABELS } from '~/components/leadStatus';
+import { db } from '~/db';
+import { LEAD_STATUSES, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
 
-// Phase 1 TODO: create form posting to actions.createLead, validation feedback.
+const result = Astro.getActionResult(actions.createLead);
+
+// On success the action returns the new id — redirect to the detail page (PRG).
+if (result && !result.error) {
+  return Astro.redirect(`/leads/${result.data.id}`, 303);
+}
+
+// The Actions middleware parses a *clone* of the request, so the original body is
+// still readable here — use it to repopulate fields and build the conflict link.
+let submitted: FormData | null = null;
+if (Astro.request.method === 'POST') {
+  try {
+    submitted = await Astro.request.formData();
+  } catch {
+    submitted = null;
+  }
+}
+const value = (key: string) => (submitted?.get(key) as string | null) ?? '';
+
+const fieldErrors = result && isInputError(result.error) ? result.error.fields : undefined;
+const isConflict =
+  !!result?.error && !isInputError(result.error) && result.error.code === 'CONFLICT';
+
+// On conflict, look up the existing lead by the submitted email for a direct link.
+let conflictHref = '/leads';
+if (isConflict) {
+  const email = value('email');
+  if (email) {
+    const existing = db.select({ id: leads.id }).from(leads).where(eq(leads.email, email)).get();
+    conflictHref = existing ? `/leads/${existing.id}` : `/leads?q=${encodeURIComponent(email)}`;
+  }
+}
+
+const selectedStatus = value('status') || 'new';
+
+const fieldClass =
+  'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
+const labelClass = 'block text-sm font-medium text-gray-700';
+const errorClass = 'mt-1 text-sm text-red-600';
 ---
 
 <Layout title="Neuer Lead · b-leads">
-  <h1 class="text-xl font-semibold">Neuer Lead</h1>
-  <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-    Platzhalter — Create-Formular (Astro Action <code>createLead</code>) folgt in Phase 1.
-  </p>
+  <nav class="text-sm text-gray-500">
+    <a href="/leads" class="hover:text-gray-900">Leads</a>
+    <span class="px-1">/</span>
+    <span class="text-gray-900">Neuer Lead</span>
+  </nav>
+  <h1 class="mt-2 text-xl font-semibold">Neuer Lead</h1>
+
+  {
+    isConflict && (
+      <div class="mt-6 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <p>{result?.error.message}</p>
+        <a href={conflictHref} class="mt-1 inline-block font-medium underline hover:text-red-900">
+          → existierenden Lead öffnen
+        </a>
+      </div>
+    )
+  }
+
+  <form method="POST" action={actions.createLead} class="mt-6 max-w-xl space-y-4">
+    <div>
+      <label class={labelClass} for="name">Name</label>
+      <input id="name" name="name" type="text" value={value('name')} class={fieldClass} />
+      {fieldErrors?.name && <p class={errorClass}>{fieldErrors.name[0]}</p>}
+    </div>
+
+    <div>
+      <label class={labelClass} for="email">E-Mail</label>
+      <input id="email" name="email" type="email" value={value('email')} class={fieldClass} />
+      {fieldErrors?.email && <p class={errorClass}>{fieldErrors.email[0]}</p>}
+    </div>
+
+    <div>
+      <label class={labelClass} for="company">Firma</label>
+      <input id="company" name="company" type="text" value={value('company')} class={fieldClass} />
+    </div>
+
+    <div>
+      <label class={labelClass} for="role">Rolle</label>
+      <input id="role" name="role" type="text" value={value('role')} class={fieldClass} />
+    </div>
+
+    <div>
+      <label class={labelClass} for="source">Quelle</label>
+      <input id="source" name="source" type="text" value={value('source')} class={fieldClass} />
+      {fieldErrors?.source && <p class={errorClass}>{fieldErrors.source[0]}</p>}
+    </div>
+
+    <div>
+      <label class={labelClass} for="status">Status</label>
+      <select id="status" name="status" class={fieldClass}>
+        {
+          LEAD_STATUSES.map((s) => (
+            <option value={s} selected={s === selectedStatus}>
+              {STATUS_LABELS[s]}
+            </option>
+          ))
+        }
+      </select>
+    </div>
+
+    <div>
+      <label class={labelClass} for="nextAction">Next Action</label>
+      <input
+        id="nextAction"
+        name="nextAction"
+        type="text"
+        value={value('nextAction')}
+        class={fieldClass}
+      />
+    </div>
+
+    <div>
+      <label class={labelClass} for="notes">Notizen (Markdown)</label>
+      <textarea id="notes" name="notes" rows="6" class={fieldClass}>{value('notes')}</textarea>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button
+        type="submit"
+        class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+      >
+        Lead anlegen
+      </button>
+      <a href="/leads" class="text-sm text-gray-500 hover:text-gray-900">Abbrechen</a>
+    </div>
+  </form>
 </Layout>

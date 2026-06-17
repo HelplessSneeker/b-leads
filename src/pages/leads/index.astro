@@ -1,7 +1,45 @@
 ---
+import { and, desc, like, or, type SQL, sql } from 'drizzle-orm';
+import LeadsFilter from '~/components/LeadsFilter';
+import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
+import { db } from '~/db';
+import { LEAD_STATUSES, type LeadStatus, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
+import { formatDateTime } from '~/lib/date';
 
-// Phase 1 TODO: load leads from db, render table, mount <LeadsFilter client:load />.
+const params = Astro.url.searchParams;
+
+// Parse + validate the status filter against the known statuses.
+const statusParam = params.get('status') ?? '';
+const selectedStatuses = statusParam
+  .split(',')
+  .map((s) => s.trim())
+  .filter((s): s is LeadStatus => (LEAD_STATUSES as readonly string[]).includes(s));
+
+const q = (params.get('q') ?? '').trim();
+
+const conditions: SQL[] = [];
+if (selectedStatuses.length) {
+  conditions.push(or(...selectedStatuses.map((s) => sql`${leads.status} = ${s}`)) as SQL);
+}
+if (q) {
+  const term = `%${q.toLowerCase()}%`;
+  conditions.push(
+    or(
+      like(sql`lower(${leads.name})`, term),
+      like(sql`lower(${leads.email})`, term),
+      like(sql`lower(${leads.company})`, term),
+    ) as SQL,
+  );
+}
+
+const rows = db
+  .select()
+  .from(leads)
+  .where(conditions.length ? and(...conditions) : undefined)
+  // lastTouchAt DESC NULLS LAST, then createdAt DESC. `is null` sorts nulls last.
+  .orderBy(sql`${leads.lastTouchAt} is null`, desc(leads.lastTouchAt), desc(leads.createdAt))
+  .all();
 ---
 
 <Layout title="Leads · b-leads">
@@ -15,7 +53,55 @@ import Layout from '~/layouts/Layout.astro';
     </a>
   </div>
 
-  <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-    Platzhalter — Leads-Tabelle mit Filter/Suche (React Island) folgt in Phase 1.
-  </p>
+  <div class="mt-6">
+    <LeadsFilter client:load selected={selectedStatuses} query={q} />
+  </div>
+
+  {
+    rows.length === 0 ? (
+      <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+        Keine Leads gefunden.
+      </p>
+    ) : (
+      <div class="mt-6 overflow-x-auto rounded border border-gray-200 bg-white">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+            <tr>
+              <th class="px-4 py-2 font-medium">Name</th>
+              <th class="px-4 py-2 font-medium">Firma</th>
+              <th class="px-4 py-2 font-medium">E-Mail</th>
+              <th class="px-4 py-2 font-medium">Status</th>
+              <th class="px-4 py-2 font-medium">Last Touch</th>
+              <th class="px-4 py-2 font-medium">Next Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((lead) => (
+              <tr
+                class="cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                onclick={`location.href='/leads/${lead.id}'`}
+              >
+                <td class="px-4 py-2">
+                  <a href={`/leads/${lead.id}`} class="font-medium text-gray-900 hover:underline">
+                    {lead.name}
+                  </a>
+                </td>
+                <td class="px-4 py-2 text-gray-600">{lead.company ?? '—'}</td>
+                <td class="px-4 py-2 text-gray-600">{lead.email}</td>
+                <td class="px-4 py-2">
+                  <span class={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[lead.status]}`}>
+                    {STATUS_LABELS[lead.status]}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-gray-600">
+                  {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}
+                </td>
+                <td class="px-4 py-2 text-gray-600">{lead.nextAction ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 </Layout>
