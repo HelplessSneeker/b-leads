@@ -1,0 +1,108 @@
+---
+import { actions } from 'astro:actions';
+import { STATUS_LABELS } from '~/components/leadStatus';
+import NotesEditor from '~/components/NotesEditor';
+import type { Lead } from '~/db/schema';
+import { LEAD_STATUSES } from '~/db/schema';
+import { getSources } from '~/lib/sources';
+
+interface Props {
+  lead: Lead;
+  fieldErrors?: Record<string, string[] | undefined>;
+  isConflict?: boolean;
+  conflictMessage?: string;
+  submitted: FormData | null;
+}
+
+const { lead, fieldErrors, isConflict, conflictMessage, submitted } = Astro.props;
+
+// On a failed update, keep what the user typed; otherwise fall back to the stored value.
+const value = (key: string, fallback: string) => {
+  const v = submitted?.get(key);
+  return typeof v === 'string' ? v : fallback;
+};
+
+const selectedStatus = value('status', lead.status);
+const notesValue = value('notes', lead.notes ?? '');
+const sources = getSources();
+
+const fieldClass =
+  'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
+const labelClass = 'block text-sm font-medium text-gray-700';
+const errorClass = 'mt-1 text-sm text-red-600';
+---
+
+{
+  isConflict && (
+    <div class="mt-4 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      {conflictMessage}
+    </div>
+  )
+}
+
+<form method="POST" action={actions.updateLead} class="mt-6 max-w-xl space-y-4">
+  <input type="hidden" name="id" value={lead.id} />
+
+  <div>
+    <label class={labelClass} for="name">Name</label>
+    <input id="name" name="name" type="text" value={value('name', lead.name)} class={fieldClass} />
+    {fieldErrors?.name && <p class={errorClass}>{fieldErrors.name[0]}</p>}
+  </div>
+
+  <div>
+    <label class={labelClass} for="email">E-Mail</label>
+    <input id="email" name="email" type="email" value={value('email', lead.email)} class={fieldClass} />
+    {fieldErrors?.email && <p class={errorClass}>{fieldErrors.email[0]}</p>}
+  </div>
+
+  <div>
+    <label class={labelClass} for="company">Firma</label>
+    <input id="company" name="company" type="text" value={value('company', lead.company ?? '')} class={fieldClass} />
+  </div>
+
+  <div>
+    <label class={labelClass} for="role">Rolle</label>
+    <input id="role" name="role" type="text" value={value('role', lead.role ?? '')} class={fieldClass} />
+  </div>
+
+  <div>
+    <label class={labelClass} for="source">Quelle</label>
+    <input id="source" name="source" type="text" value={value('source', lead.source)} class={fieldClass} list="sources" />
+    <datalist id="sources">{sources.map((s) => <option value={s} />)}</datalist>
+    {fieldErrors?.source && <p class={errorClass}>{fieldErrors.source[0]}</p>}
+  </div>
+
+  <div>
+    <label class={labelClass} for="status">Status</label>
+    <select id="status" name="status" class={fieldClass}>
+      {
+        LEAD_STATUSES.map((s) => (
+          <option value={s} selected={s === selectedStatus}>
+            {STATUS_LABELS[s]}
+          </option>
+        ))
+      }
+    </select>
+  </div>
+
+  <div>
+    <label class={labelClass} for="nextAction">Next Action</label>
+    <input id="nextAction" name="nextAction" type="text" value={value('nextAction', lead.nextAction ?? '')} class={fieldClass} />
+  </div>
+
+  <div>
+    <span class={labelClass}>Notizen (Markdown)</span>
+    <div class="mt-1">
+      <NotesEditor client:load value={notesValue} />
+    </div>
+  </div>
+
+  <div>
+    <button
+      type="submit"
+      class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+    >
+      Speichern
+    </button>
+  </div>
+</form>
