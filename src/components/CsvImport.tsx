@@ -103,6 +103,12 @@ export default function CsvImport() {
         return;
       }
       setResult({ inserted: data.inserted, duplicates: data.duplicates, skipped });
+      // Reset the picker so the outcome (toast) is the clear end state and the
+      // same file can't be re-imported by accident.
+      setFileName('');
+      setHeaders([]);
+      setRows([]);
+      setMapping({});
     } catch {
       setError('Import fehlgeschlagen.');
     } finally {
@@ -132,25 +138,6 @@ export default function CsvImport() {
           </p>
         )}
       </div>
-
-      {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {result && (
-        <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          <p className="font-medium">Import abgeschlossen.</p>
-          <p className="mt-1">
-            {result.inserted} importiert · {result.duplicates} Duplikate · {result.skipped}{' '}
-            übersprungen (ohne Name/E-Mail).
-          </p>
-          <a href="/leads" className="mt-2 inline-block font-medium underline hover:text-green-900">
-            → zur Lead-Liste
-          </a>
-        </div>
-      )}
 
       {rows.length > 0 && (
         <>
@@ -240,6 +227,51 @@ export default function CsvImport() {
             </span>
           </div>
         </>
+      )}
+
+      {/* Fixed toast so the outcome is visible no matter how far the form is scrolled. */}
+      {(result || error) && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm" role="status" aria-live="polite">
+          {error ? (
+            <div className="flex items-start gap-3 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-lg">
+              <span className="flex-1">{error}</span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="font-medium text-red-500 hover:text-red-800"
+                aria-label="Schließen"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            result && (
+              <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800 shadow-lg">
+                <div className="flex items-start gap-3">
+                  <p className="flex-1 font-medium">Import abgeschlossen</p>
+                  <button
+                    type="button"
+                    onClick={() => setResult(null)}
+                    className="font-medium text-green-600 hover:text-green-900"
+                    aria-label="Schließen"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="mt-1">
+                  {result.inserted} importiert · {result.duplicates} Duplikate · {result.skipped}{' '}
+                  übersprungen (ohne Name/E-Mail).
+                </p>
+                <a
+                  href="/leads"
+                  className="mt-2 inline-block font-medium underline hover:text-green-900"
+                >
+                  → zur Lead-Liste
+                </a>
+              </div>
+            )
+          )}
+        </div>
       )}
     </div>
   );
