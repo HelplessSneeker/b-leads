@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-18T00:00:00Z",
+  "title": "Design System: b-leads",
+  "extensions": {
+    "colorMeta": {
+      "bg": { "role": "neutral", "displayName": "Surface Base", "canonical": "oklch(1 0 0)", "modes": { "light": "oklch(1 0 0)", "dark": "oklch(0.16 0 0)" }, "tonalRamp": ["oklch(0.16 0 0)", "oklch(0.20 0 0)", "oklch(0.235 0 0)", "oklch(0.30 0 0)", "oklch(0.47 0 0)", "oklch(0.68 0 0)", "oklch(0.90 0 0)", "oklch(1 0 0)"] },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "oklch(0.975 0 0)", "modes": { "light": "oklch(0.975 0 0)", "dark": "oklch(0.20 0 0)" } },
+      "surface-sunken": { "role": "neutral", "displayName": "Surface Sunken", "canonical": "oklch(0.945 0 0)", "modes": { "light": "oklch(0.945 0 0)", "dark": "oklch(0.235 0 0)" } },
+      "border": { "role": "neutral", "displayName": "Hairline Border", "canonical": "oklch(0.90 0 0)", "modes": { "light": "oklch(0.90 0 0)", "dark": "oklch(0.30 0 0)" } },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.24 0.012 245)", "modes": { "light": "oklch(0.24 0.012 245)", "dark": "oklch(0.93 0 0)" } },
+      "muted": { "role": "neutral", "displayName": "Muted", "canonical": "oklch(0.47 0.012 245)", "modes": { "light": "oklch(0.47 0.012 245)", "dark": "oklch(0.68 0 0)" } },
+      "accent": { "role": "primary", "displayName": "Console Indigo", "canonical": "oklch(0.50 0.17 245)", "modes": { "light": "oklch(0.50 0.17 245)", "dark": "oklch(0.62 0.16 245)" }, "tonalRamp": ["oklch(0.20 0.08 245)", "oklch(0.30 0.12 245)", "oklch(0.40 0.16 245)", "oklch(0.50 0.17 245)", "oklch(0.62 0.16 245)", "oklch(0.72 0.13 245)", "oklch(0.84 0.08 245)", "oklch(0.94 0.03 245)"] },
+      "accent-text": { "role": "primary", "displayName": "Console Indigo Text", "canonical": "oklch(0.45 0.17 245)", "modes": { "light": "oklch(0.45 0.17 245)", "dark": "oklch(0.80 0.13 245)" } },
+      "status-new": { "role": "tertiary", "displayName": "Status · Neu", "canonical": "oklch(0.40 0 0)", "modes": { "light": "oklch(0.40 0 0)", "dark": "oklch(0.72 0 0)" } },
+      "status-contacted": { "role": "tertiary", "displayName": "Status · Kontaktiert", "canonical": "oklch(0.45 0.15 225)", "modes": { "light": "oklch(0.45 0.15 225)", "dark": "oklch(0.82 0.10 225)" } },
+      "status-replied": { "role": "tertiary", "displayName": "Status · Geantwortet", "canonical": "oklch(0.45 0.18 295)", "modes": { "light": "oklch(0.45 0.18 295)", "dark": "oklch(0.82 0.12 295)" } },
+      "status-qualified": { "role": "tertiary", "displayName": "Status · Qualifiziert", "canonical": "oklch(0.46 0.12 72)", "modes": { "light": "oklch(0.46 0.12 72)", "dark": "oklch(0.83 0.11 72)" } },
+      "status-won": { "role": "tertiary", "displayName": "Status · Gewonnen", "canonical": "oklch(0.43 0.13 150)", "modes": { "light": "oklch(0.43 0.13 150)", "dark": "oklch(0.80 0.12 150)" } },
+      "status-lost": { "role": "tertiary", "displayName": "Status · Verloren", "canonical": "oklch(0.50 0.18 25)", "modes": { "light": "oklch(0.50 0.18 25)", "dark": "oklch(0.78 0.15 25)" } }
+    },
+    "typographyMeta": {
+      "page-title": { "displayName": "Page Title", "purpose": "Page headers (Leads, Heute). One per page; the type ceiling." },
+      "section": { "displayName": "Section", "purpose": "Sub-section headers and dialog titles." },
+      "title": { "displayName": "Title", "purpose": "Row-level emphasis: lead names, card headers." },
+      "body": { "displayName": "Body", "purpose": "Default UI and prose text; prose capped 65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Table column headers and field labels. The only uppercase-tracked use." },
+      "data": { "displayName": "Data (Mono)", "purpose": "IBM Plex Mono, tabular numerals: dates, counts, emails, IDs, follow-ups. The console's signature." }
+    },
+    "shadows": [
+      { "name": "overlay", "value": "0 8px 24px -6px oklch(0 0 0 / 0.18)", "purpose": "Lift true overlays (dropdown, popover, dialog, command palette) off the page. Dark mode uses /0.55." },
+      { "name": "focus-ring", "value": "0 0 0 2px var(--bg), 0 0 0 4px var(--accent)", "purpose": "Keyboard focus indicator. Load-bearing: the console is keyboard-forward." }
+    ],
+    "motion": [
+      { "name": "ease-out-quart", "value": "cubic-bezier(0.25, 1, 0.5, 1)", "purpose": "Default easing for state transitions. Exponential ease-out, no bounce." },
+      { "name": "dur-fast", "value": "150ms", "purpose": "Hover, focus, small state feedback." },
+      { "name": "dur-base", "value": "200ms", "purpose": "Selection, panel/disclosure transitions. Ceiling for in-flow UI." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px", "purpose": "Below: collapse the lead table to a stacked row layout; nav becomes a compact menu." },
+      { "name": "lg", "value": "1024px", "purpose": "Above: full table density, all columns visible." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action per view (e.g. Neuer Lead). Filled Console Indigo, white text.",
+      "html": "<button class=\"ds-btn-primary\">Neuer Lead</button>",
+      "css": ".ds-btn-primary { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: #fff; background: oklch(0.50 0.17 245); border: none; border-radius: 3px; padding: 6px 12px; cursor: pointer; transition: background 150ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-primary:hover { background: oklch(0.45 0.17 245); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.50 0.17 245); } .ds-btn-primary:active { background: oklch(0.41 0.17 245); } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default for most actions (e.g. CSV-Import). Surface fill, hairline border, ink text.",
+      "html": "<button class=\"ds-btn-secondary\">CSV-Import</button>",
+      "css": ".ds-btn-secondary { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); background: oklch(0.975 0 0); border: 1px solid oklch(0.90 0 0); border-radius: 3px; padding: 6px 12px; cursor: pointer; transition: background 150ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-secondary:hover { background: oklch(0.945 0 0); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.50 0.17 245); } .ds-btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Status Tag",
+      "kind": "chip",
+      "refersTo": "status-tag",
+      "description": "Pipeline state indicator. Small squared tag (not a pill), pale tint bg + saturated status-hue text. Shown here: Gewonnen / won.",
+      "html": "<span class=\"ds-tag\">Gewonnen</span>",
+      "css": ".ds-tag { display: inline-block; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.43 0.13 150); background: oklch(0.95 0.04 150); border-radius: 2px; padding: 1px 6px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text/select field. Hairline border, 3px radius, accent border + ring on focus, never-faint placeholder.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Suche Name, E-Mail, Firma…\" />",
+      "css": ".ds-input { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.875rem; color: oklch(0.24 0.012 245); background: #fff; border: 1px solid oklch(0.90 0 0); border-radius: 3px; padding: 6px 10px; transition: border-color 150ms cubic-bezier(0.25,1,0.5,1); } .ds-input::placeholder { color: oklch(0.47 0.012 245); } .ds-input:focus-visible { outline: none; border-color: oklch(0.50 0.17 245); box-shadow: 0 0 0 2px #fff, 0 0 0 3px oklch(0.50 0.17 245); }"
+    },
+    {
+      "name": "Lead Table Row",
+      "kind": "custom",
+      "refersTo": "table-cell",
+      "description": "The signature surface. Dense ~28px row; lead name in Title sans, all data columns in mono with tabular numerals; hairline divider, no zebra, hover = surface-sunken.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Name</th><th>E-Mail</th><th>Last Touch</th><th>Wiedervorlage</th></tr></thead><tbody><tr><td class=\"ds-cell-name\">Mara Vogt</td><td class=\"ds-cell-data\">mara@vogt.io</td><td class=\"ds-cell-data\">16.06.2026 09:12</td><td class=\"ds-cell-data ds-overdue\">14.06.2026</td></tr><tr><td class=\"ds-cell-name\">Jonas Reicher</td><td class=\"ds-cell-data\">j.reicher@acme.co</td><td class=\"ds-cell-data\">17.06.2026 18:40</td><td class=\"ds-cell-data ds-muted\">—</td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; background: oklch(0.975 0 0); border: 1px solid oklch(0.90 0 0); border-radius: 4px; overflow: hidden; text-align: left; } .ds-table thead { background: oklch(0.945 0 0); } .ds-table th { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.47 0.012 245); padding: 6px 12px; border-bottom: 1px solid oklch(0.90 0 0); } .ds-table td { padding: 6px 12px; border-bottom: 1px solid oklch(0.93 0 0); } .ds-table tbody tr:last-child td { border-bottom: none; } .ds-table tbody tr:hover { background: oklch(0.945 0 0); } .ds-cell-name { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); } .ds-cell-data { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 0.8125rem; font-feature-settings: 'tnum' 1; color: oklch(0.24 0.012 245); } .ds-muted { color: oklch(0.47 0.012 245); } .ds-overdue { color: oklch(0.50 0.18 25); font-weight: 600; }"
+    },
+    {
+      "name": "Top Navigation",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Top bar: wordmark + links. Muted default, ink hover, active = ink + 600 + 2px accent underline (the only place nav touches the accent).",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-wordmark\">b-leads</span><a class=\"ds-nav-link ds-active\" href=\"#\">Heute</a><a class=\"ds-nav-link\" href=\"#\">Leads</a><a class=\"ds-nav-link\" href=\"#\">Neuer Lead</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 20px; background: oklch(0.975 0 0); border-bottom: 1px solid oklch(0.90 0 0); padding: 10px 16px; font-family: 'IBM Plex Sans', system-ui, sans-serif; } .ds-wordmark { font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); margin-right: 8px; } .ds-nav-link { font-size: 0.875rem; color: oklch(0.47 0.012 245); text-decoration: none; padding-bottom: 2px; transition: color 150ms cubic-bezier(0.25,1,0.5,1); } .ds-nav-link:hover { color: oklch(0.24 0.012 245); } .ds-nav-link.ds-active { color: oklch(0.24 0.012 245); font-weight: 600; border-bottom: 2px solid oklch(0.50 0.17 245); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Operator's Console",
+    "overview": "b-leads is a single-person cockpit for running cold outreach. It is not a product being sold; it is a workbench the operator returns to every day to scan the state of every lead, act on the right ones, and never lose an overdue follow-up. The whole system optimizes for one thing: the operator reads dense information and acts fast. Density is the point, not a compromise. The visual language is a quiet technical console: a flat, layered neutral surface; proportional sans for labels and prose; and a monospace data layer that carries everything scanned and compared down a column. Color is rationed: an indigo accent on interaction only, six semantic hues on pipeline state only. The system is system-adaptive: a dark console for focused and evening sessions, a pure-white data-desk for bright daytime work.",
+    "keyCharacteristics": [
+      "Flat, tonally-layered neutral surface; depth by border and tone, not shadow.",
+      "Monospace tabular numerals for all scanned/compared data.",
+      "A single rationed indigo accent for interaction; six semantic hues for state.",
+      "Tight density: 14px body, ~28px table rows, small squared status tags.",
+      "Dual-mode (dark + light), adapting to ambient light."
+    ],
+    "rules": [
+      { "name": "The Rationed Accent Rule", "body": "Console Indigo is interaction, full stop. If it appears on something the operator cannot click, focus, or select, it is wrong. Target <=10% of any screen.", "section": "colors" },
+      { "name": "The Two Vocabularies Rule", "body": "Interaction color (indigo) and state color (the six status hues) are separate languages and never overlap. The accent is never a status; a status hue is never an action.", "section": "colors" },
+      { "name": "The Meaning-Only Color Rule", "body": "Neutrals carry all structure. A pixel is colored only if the color means something (interaction or state). Decorative color is forbidden.", "section": "colors" },
+      { "name": "The Mono-for-Data Rule", "body": "If a value is scanned down a column or compared between rows (date, count, email, ID, currency), it is set in IBM Plex Mono with tabular numerals. Prose and labels are Plex Sans.", "section": "typography" },
+      { "name": "The Fixed-Scale Rule", "body": "Type sizes are fixed rem, never fluid clamp(). The operator views at a consistent DPI.", "section": "typography" },
+      { "name": "The Flat-Console Rule", "body": "Resting surfaces are flat. Shadows belong only to things floating above the page (overlays) and to focus.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do set every scanned/compared value (dates, counts, emails, IDs, follow-ups) in IBM Plex Mono with tabular numerals.",
+      "Do keep Console Indigo for interaction only - primary action, selection, focus, active nav, links - at <=10% of any screen.",
+      "Do convey depth with tone (bg -> surface -> surface-sunken) and 1px borders; keep resting surfaces flat.",
+      "Do pair every status/urgency color with weight or a text label, so state reads without relying on hue.",
+      "Do keep body text at the ink end of the ramp; verify >=4.5:1, including placeholders and muted text.",
+      "Do ship every interactive component with default, hover, focus-visible, active, and disabled states, and a visible accent focus ring.",
+      "Do honor prefers-reduced-motion with an instant/crossfade fallback; keep state transitions at 150-250ms."
+    ],
+    "donts": [
+      "Don't build a generic SaaS dashboard: no hero-metric cards, no gradient accents, no identical icon-heading-text card grids, no marketing chrome.",
+      "Don't build a heavy enterprise CRM: no cluttered toolbars, tabs-within-tabs, or everything-at-once panels.",
+      "Don't go toy: no playful rounded-everything, illustrations, or bounce/elastic motion.",
+      "Don't use the indigo accent to express pipeline state, and don't use a status hue for an action.",
+      "Don't put shadows on resting cards, rows, panels, or buttons. Shadows are for overlays and focus only.",
+      "Don't use border-left/border-right > 1px as a colored accent stripe.",
+      "Don't use gradient text, background-clip: text, or decorative glassmorphism.",
+      "Don't set data in proportional sans or prose in mono; don't use fluid clamp() type sizes.",
+      "Don't revert to undifferentiated default-Tailwind gray (bg-gray-50 / text-gray-900 with no tokens)."
+    ]
+  }
+}
