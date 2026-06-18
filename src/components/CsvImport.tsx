@@ -34,12 +34,43 @@ type ImportRow = {
 const inputClass =
   'rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
 
-// Auto-map a lead field to a CSV header when their names match (case-insensitive).
+// Normalize a header/alias for matching: lowercase, strip diacritics + any
+// non-alphanumeric chars. So "E-Mail" -> "email", "Nächste Aktion" -> "nachsteaktion".
+function normalizeHeader(s: string): string {
+  // NFKD splits accented letters into base + combining mark; [^a-z0-9] then drops
+  // the marks and every other separator, so only base alphanumerics remain.
+  return s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+// Common German/English header spellings per field (normalized on use). The field
+// key and its German label are also accepted automatically.
+const FIELD_ALIASES: Record<ImportableLeadField, string[]> = {
+  name: ['name', 'kontakt', 'fullname', 'vollername'],
+  email: ['email', 'mail', 'emailadresse', 'emailaddress', 'mailadresse'],
+  company: ['company', 'firma', 'unternehmen', 'organization', 'organisation'],
+  role: ['role', 'rolle', 'position', 'titel', 'title', 'funktion'],
+  source: ['source', 'quelle', 'herkunft', 'kanal'],
+  nextAction: ['nextaction', 'nachsteaktion', 'naechsteaktion', 'nextstep', 'todo', 'aktion'],
+  notes: ['notes', 'notizen', 'notiz', 'anmerkungen', 'kommentar', 'kommentare', 'bemerkung'],
+};
+
+// Auto-map each lead field to a CSV header whose name matches the field key, its
+// German label, or a known alias (diacritic-/punctuation-insensitive).
 function autoMap(headers: string[]): Mapping {
   const mapping: Mapping = {};
+  const used = new Set<string>();
   for (const field of IMPORTABLE_LEAD_FIELDS) {
-    const match = headers.find((h) => h.toLowerCase() === field.toLowerCase());
-    if (match) mapping[field] = match;
+    const candidates = new Set(
+      [field, FIELD_LABELS[field], ...FIELD_ALIASES[field]].map(normalizeHeader),
+    );
+    const match = headers.find((h) => !used.has(h) && candidates.has(normalizeHeader(h)));
+    if (match) {
+      mapping[field] = match;
+      used.add(match);
+    }
   }
   return mapping;
 }
@@ -103,6 +134,12 @@ export default function CsvImport() {
         return;
       }
       setResult({ inserted: data.inserted, duplicates: data.duplicates, skipped });
+      // Reset the picker so the outcome (toast) is the clear end state and the
+      // same file can't be re-imported by accident.
+      setFileName('');
+      setHeaders([]);
+      setRows([]);
+      setMapping({});
     } catch {
       setError('Import fehlgeschlagen.');
     } finally {
@@ -132,25 +169,6 @@ export default function CsvImport() {
           </p>
         )}
       </div>
-
-      {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {result && (
-        <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          <p className="font-medium">Import abgeschlossen.</p>
-          <p className="mt-1">
-            {result.inserted} importiert · {result.duplicates} Duplikate · {result.skipped}{' '}
-            übersprungen (ohne Name/E-Mail).
-          </p>
-          <a href="/leads" className="mt-2 inline-block font-medium underline hover:text-green-900">
-            → zur Lead-Liste
-          </a>
-        </div>
-      )}
 
       {rows.length > 0 && (
         <>
@@ -240,6 +258,51 @@ export default function CsvImport() {
             </span>
           </div>
         </>
+      )}
+
+      {/* Fixed toast so the outcome is visible no matter how far the form is scrolled. */}
+      {(result || error) && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm" role="status" aria-live="polite">
+          {error ? (
+            <div className="flex items-start gap-3 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-lg">
+              <span className="flex-1">{error}</span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="font-medium text-red-500 hover:text-red-800"
+                aria-label="Schließen"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            result && (
+              <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800 shadow-lg">
+                <div className="flex items-start gap-3">
+                  <p className="flex-1 font-medium">Import abgeschlossen</p>
+                  <button
+                    type="button"
+                    onClick={() => setResult(null)}
+                    className="font-medium text-green-600 hover:text-green-900"
+                    aria-label="Schließen"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="mt-1">
+                  {result.inserted} importiert · {result.duplicates} Duplikate · {result.skipped}{' '}
+                  übersprungen (ohne Name/E-Mail).
+                </p>
+                <a
+                  href="/leads"
+                  className="mt-2 inline-block font-medium underline hover:text-green-900"
+                >
+                  → zur Lead-Liste
+                </a>
+              </div>
+            )
+          )}
+        </div>
       )}
     </div>
   );
