@@ -13,6 +13,7 @@ import {
   deleteLead as deleteLeadCore,
   NotFoundError,
   updateLead as updateLeadCore,
+  updateLeadStatus as updateLeadStatusCore,
 } from './leads';
 
 // Thin Action adapters: validate via Zod, call the pure CRUD functions in
@@ -65,6 +66,25 @@ export const server = {
       try {
         const lead = updateLeadCore(db, input);
         return { id: lead.id };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  updateLeadStatus: defineAction({
+    accept: 'form',
+    input: z.object({
+      id: z.string().uuid(),
+      status: z.enum(LEAD_STATUSES),
+      returnTo: z.string().optional(),
+    }),
+    handler: async ({ id, status, returnTo }) => {
+      try {
+        updateLeadStatusCore(db, { id, status });
+        // Only allow same-app paths back to the list; fall back to /leads.
+        const safeReturnTo = returnTo?.startsWith('/leads') ? returnTo : '/leads';
+        return { returnTo: safeReturnTo };
       } catch (err) {
         return toActionError(err);
       }

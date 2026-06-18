@@ -113,6 +113,23 @@ export function updateLead<S extends Record<string, unknown>>(
   }
 }
 
+/** Minimal status-only update for the inline dropdown on the list page. */
+export function updateLeadStatus<S extends Record<string, unknown>>(
+  db: LeadsDb<S>,
+  input: { id: string; status: LeadStatus },
+): Lead {
+  const existing = db.select().from(leads).where(eq(leads.id, input.id)).get();
+  if (!existing) throw new NotFoundError();
+
+  // Touches only status — lastTouchAt stays activity-driven, the rest untouched.
+  return db
+    .update(leads)
+    .set({ status: input.status, updatedAt: new Date() })
+    .where(eq(leads.id, input.id))
+    .returning()
+    .get();
+}
+
 export function deleteLead<S extends Record<string, unknown>>(
   db: LeadsDb<S>,
   input: { id: string },

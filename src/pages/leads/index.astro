@@ -1,4 +1,5 @@
 ---
+import { actions } from 'astro:actions';
 import { and, desc, like, or, type SQL, sql } from 'drizzle-orm';
 import LeadsFilter from '~/components/LeadsFilter';
 import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
@@ -7,7 +8,17 @@ import { LEAD_STATUSES, type LeadStatus, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
 import { formatDate, formatDateTime } from '~/lib/date';
 
+// PRG: after an inline status change, redirect back to the list the user was on
+// (filters preserved via the submitted returnTo) so a reload doesn't resubmit.
+const statusResult = Astro.getActionResult(actions.updateLeadStatus);
+if (statusResult && !statusResult.error) {
+  return Astro.redirect(statusResult.data.returnTo, 303);
+}
+
 const params = Astro.url.searchParams;
+
+// Round-trip the current filter query so the status form can return here.
+const returnTo = params.toString() ? `/leads?${params.toString()}` : '/leads';
 
 // Calendar-date comparison in the app timezone (avoids UTC-offset edge cases).
 const isoDate = (d: Date) =>
@@ -144,10 +155,7 @@ function statusToggleHref(status: LeadStatus): string {
           </thead>
           <tbody>
             {rows.map((lead) => (
-              <tr
-                class="cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50"
-                onclick={`location.href='/leads/${lead.id}'`}
-              >
+              <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                 <td class="px-4 py-2">
                   <a href={`/leads/${lead.id}`} class="font-medium text-gray-900 hover:underline">
                     {lead.name}
@@ -156,9 +164,22 @@ function statusToggleHref(status: LeadStatus): string {
                 <td class="px-4 py-2 text-gray-600">{lead.company ?? '—'}</td>
                 <td class="px-4 py-2 text-gray-600">{lead.email}</td>
                 <td class="px-4 py-2">
-                  <span class={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[lead.status]}`}>
-                    {STATUS_LABELS[lead.status]}
-                  </span>
+                  <form method="POST" action={actions.updateLeadStatus}>
+                    <input type="hidden" name="id" value={lead.id} />
+                    <input type="hidden" name="returnTo" value={returnTo} />
+                    <select
+                      name="status"
+                      onchange="this.form.requestSubmit()"
+                      aria-label="Status ändern"
+                      class="rounded border border-gray-300 px-2 py-1 text-xs focus:border-gray-500 focus:outline-none"
+                    >
+                      {LEAD_STATUSES.map((s) => (
+                        <option value={s} selected={s === lead.status}>
+                          {STATUS_LABELS[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </form>
                 </td>
                 <td class="px-4 py-2 text-gray-600">
                   {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}

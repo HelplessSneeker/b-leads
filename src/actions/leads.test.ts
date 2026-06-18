@@ -4,7 +4,14 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { leads } from '~/db/schema';
-import { ConflictError, createLead, deleteLead, NotFoundError, updateLead } from './leads';
+import {
+  ConflictError,
+  createLead,
+  deleteLead,
+  NotFoundError,
+  updateLead,
+  updateLeadStatus,
+} from './leads';
 
 function freshDb() {
   const sqlite = new Database(':memory:');
@@ -84,6 +91,42 @@ describe('updateLead', () => {
         email: 'x@example.com',
         source: 'test',
       }),
+    ).toThrow(NotFoundError);
+  });
+});
+
+describe('updateLeadStatus', () => {
+  let db: ReturnType<typeof freshDb>;
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('changes only the status, leaving other fields untouched', () => {
+    const touched = new Date('2025-01-01T10:00:00Z');
+    const [lead] = db
+      .insert(leads)
+      .values({
+        name: 'A',
+        email: 'a@example.com',
+        company: 'Acme',
+        source: 'test',
+        status: 'new',
+        lastTouchAt: touched,
+      })
+      .returning()
+      .all();
+
+    const updated = updateLeadStatus(db, { id: lead.id, status: 'qualified' });
+
+    expect(updated.status).toBe('qualified');
+    expect(updated.name).toBe('A');
+    expect(updated.company).toBe('Acme');
+    expect(updated.lastTouchAt?.getTime()).toBe(touched.getTime());
+  });
+
+  it('throws NotFoundError for an unknown id', () => {
+    expect(() =>
+      updateLeadStatus(db, { id: '00000000-0000-0000-0000-000000000000', status: 'won' }),
     ).toThrow(NotFoundError);
   });
 });
