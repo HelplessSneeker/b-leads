@@ -34,12 +34,43 @@ type ImportRow = {
 const inputClass =
   'rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
 
-// Auto-map a lead field to a CSV header when their names match (case-insensitive).
+// Normalize a header/alias for matching: lowercase, strip diacritics + any
+// non-alphanumeric chars. So "E-Mail" -> "email", "Nächste Aktion" -> "nachsteaktion".
+function normalizeHeader(s: string): string {
+  // NFKD splits accented letters into base + combining mark; [^a-z0-9] then drops
+  // the marks and every other separator, so only base alphanumerics remain.
+  return s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+// Common German/English header spellings per field (normalized on use). The field
+// key and its German label are also accepted automatically.
+const FIELD_ALIASES: Record<ImportableLeadField, string[]> = {
+  name: ['name', 'kontakt', 'fullname', 'vollername'],
+  email: ['email', 'mail', 'emailadresse', 'emailaddress', 'mailadresse'],
+  company: ['company', 'firma', 'unternehmen', 'organization', 'organisation'],
+  role: ['role', 'rolle', 'position', 'titel', 'title', 'funktion'],
+  source: ['source', 'quelle', 'herkunft', 'kanal'],
+  nextAction: ['nextaction', 'nachsteaktion', 'naechsteaktion', 'nextstep', 'todo', 'aktion'],
+  notes: ['notes', 'notizen', 'notiz', 'anmerkungen', 'kommentar', 'kommentare', 'bemerkung'],
+};
+
+// Auto-map each lead field to a CSV header whose name matches the field key, its
+// German label, or a known alias (diacritic-/punctuation-insensitive).
 function autoMap(headers: string[]): Mapping {
   const mapping: Mapping = {};
+  const used = new Set<string>();
   for (const field of IMPORTABLE_LEAD_FIELDS) {
-    const match = headers.find((h) => h.toLowerCase() === field.toLowerCase());
-    if (match) mapping[field] = match;
+    const candidates = new Set(
+      [field, FIELD_LABELS[field], ...FIELD_ALIASES[field]].map(normalizeHeader),
+    );
+    const match = headers.find((h) => !used.has(h) && candidates.has(normalizeHeader(h)));
+    if (match) {
+      mapping[field] = match;
+      used.add(match);
+    }
   }
   return mapping;
 }
