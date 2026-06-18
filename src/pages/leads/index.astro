@@ -100,7 +100,8 @@ function statusToggleHref(status: LeadStatus): string {
         return (
           <a
             href={statusToggleHref(s)}
-            aria-pressed={isActive}
+            aria-current={isActive ? 'true' : undefined}
+            aria-label={`Filter ${STATUS_LABELS[s]}: ${countByStatus.get(s) ?? 0} Leads${isActive ? ' (aktiv)' : ''}`}
             class:list={[
               'flex min-w-[7rem] shrink-0 flex-col gap-1.5 rounded-sm border bg-surface px-3 py-2 transition-colors',
               isActive
@@ -124,9 +125,28 @@ function statusToggleHref(status: LeadStatus): string {
 
   {
     rows.length === 0 ? (
-      <p class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
-        Keine Leads gefunden.
-      </p>
+      <div class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
+        {q || selectedStatuses.length ? (
+          <p>
+            Keine Leads für diesen Filter.{' '}
+            <a href="/leads" class="font-medium text-accent-text hover:underline">
+              Filter zurücksetzen
+            </a>
+          </p>
+        ) : (
+          <p>
+            Noch keine Leads.{' '}
+            <a href="/leads/new" class="font-medium text-accent-text hover:underline">
+              Neuen Lead anlegen
+            </a>{' '}
+            oder{' '}
+            <a href="/leads/import" class="font-medium text-accent-text hover:underline">
+              CSV importieren
+            </a>
+            .
+          </p>
+        )}
+      </div>
     ) : (
       <div class="mt-6 overflow-x-auto rounded-sm border border-border bg-surface">
         <table class="w-full text-left text-sm">
@@ -147,14 +167,21 @@ function statusToggleHref(status: LeadStatus): string {
                 <td class="px-3 py-1.5">
                   <a
                     href={`/leads/${lead.id}`}
-                    class="font-medium text-ink transition-colors group-hover:text-accent-text"
+                    title={lead.name}
+                    class="block max-w-[16ch] truncate font-medium text-ink transition-colors group-hover:text-accent-text"
                   >
                     {lead.name}
                   </a>
                 </td>
-                <td class="px-3 py-1.5 text-muted">{lead.company ?? '—'}</td>
                 <td class="px-3 py-1.5">
-                  <span class="data text-ink">{lead.email}</span>
+                  <span class="block max-w-[14ch] truncate text-muted" title={lead.company ?? undefined}>
+                    {lead.company ?? '—'}
+                  </span>
+                </td>
+                <td class="px-3 py-1.5">
+                  <span class="data block max-w-[22ch] truncate text-ink" title={lead.email}>
+                    {lead.email}
+                  </span>
                 </td>
                 <td class="px-3 py-1.5">
                   <form method="POST" action={actions.updateLeadStatus}>
@@ -185,7 +212,11 @@ function statusToggleHref(status: LeadStatus): string {
                     {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
                   </span>
                 </td>
-                <td class="px-3 py-1.5 text-muted">{lead.nextAction ?? '—'}</td>
+                <td class="px-3 py-1.5">
+                  <span class="block max-w-[24ch] truncate text-muted" title={lead.nextAction ?? undefined}>
+                    {lead.nextAction ?? '—'}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>

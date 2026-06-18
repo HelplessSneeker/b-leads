@@ -18,7 +18,16 @@ const FIELD_LABELS: Record<ImportableLeadField, string> = {
 const REQUIRED_FIELDS: ImportableLeadField[] = ['name', 'email'];
 
 type Mapping = Partial<Record<ImportableLeadField, string>>;
-type ImportResult = { inserted: number; duplicates: number; skipped: number };
+type ImportResult = {
+  inserted: number;
+  duplicates: number;
+  invalid: number;
+  skipped: number;
+};
+
+// Guard against accidentally loading a huge non-CSV file into the tab (reading it
+// as text would freeze the page). Generous for a leads export.
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 // Ready-to-insert lead row sent to the importLeads action (matches its Zod input).
 type ImportRow = {
@@ -84,18 +93,44 @@ export default function CsvImport() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
+  // Reset any previously loaded file so a failed/empty load can't be imported.
+  function clearFile() {
+    setFileName('');
+    setHeaders([]);
+    setRows([]);
+    setMapping({});
+  }
+
   function onFile(file: File) {
     setResult(null);
     setError(null);
+    if (file.size > MAX_FILE_BYTES) {
+      clearFile();
+      setError('Datei ist zu groß (max. 10 MB).');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      const { headers, rows } = parseCsv(String(reader.result ?? ''));
+      const { headers, rows, errors } = parseCsv(String(reader.result ?? ''));
       setFileName(file.name);
+      if (headers.length === 0) {
+        clearFile();
+        setError('Keine Spalten erkannt — ist das eine gültige CSV-Datei?');
+        return;
+      }
       setHeaders(headers);
       setRows(rows);
       setMapping(autoMap(headers));
+      if (rows.length === 0) {
+        setError('Datei enthält keine Datenzeilen.');
+      } else if (errors.length > 0) {
+        setError(`CSV teilweise fehlerhaft gelesen: ${errors[0]}`);
+      }
     };
-    reader.onerror = () => setError('Datei konnte nicht gelesen werden.');
+    reader.onerror = () => {
+      clearFile();
+      setError('Datei konnte nicht gelesen werden.');
+    };
     reader.readAsText(file);
   }
 
@@ -120,7 +155,7 @@ export default function CsvImport() {
     return { payload, skipped };
   }, [rows, mapping, defaultSource]);
 
-  const canImport = rows.length > 0 && defaultSource.trim().length > 0 && !importing;
+  const canImport = payload.length > 0 && defaultSource.trim().length > 0 && !importing;
 
   async function onImport() {
     setError(null);
@@ -132,13 +167,15 @@ export default function CsvImport() {
         setError(error.message);
         return;
       }
-      setResult({ inserted: data.inserted, duplicates: data.duplicates, skipped });
+      setResult({
+        inserted: data.inserted,
+        duplicates: data.duplicates,
+        invalid: data.invalid,
+        skipped,
+      });
       // Reset the picker so the outcome (toast) is the clear end state and the
       // same file can't be re-imported by accident.
-      setFileName('');
-      setHeaders([]);
-      setRows([]);
-      setMapping({});
+      clearFile();
     } catch {
       setError('Import fehlgeschlagen.');
     } finally {
@@ -254,7 +291,9 @@ export default function CsvImport() {
               {importing ? 'Importiere…' : `${payload.length} Leads importieren`}
             </button>
             <span className="text-sm text-muted">
-              {skipped > 0 && `${skipped} Zeilen werden übersprungen (ohne Name/E-Mail)`}
+              {payload.length === 0
+                ? 'Keine importierbare Zeile — Name und E-Mail müssen zugeordnet sein.'
+                : skipped > 0 && `${skipped} Zeilen werden übersprungen (ohne Name/E-Mail)`}
             </span>
           </div>
         </>
@@ -292,6 +331,7 @@ export default function CsvImport() {
                 <p className="mt-1">
                   <span className="data">{result.inserted}</span> importiert ·{' '}
                   <span className="data">{result.duplicates}</span> Duplikate ·{' '}
+                  <span className="data">{result.invalid}</span> ungültig ·{' '}
                   <span className="data">{result.skipped}</span> übersprungen (ohne Name/E-Mail).
                 </p>
                 <a href="/leads" className="mt-2 inline-block font-medium underline">

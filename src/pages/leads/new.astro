@@ -69,13 +69,13 @@ const errorClass = 'mt-1 text-sm text-danger';
 
   <form method="POST" action={actions.createLead} class="mt-6 max-w-xl space-y-4">
     <div>
-      <label class={labelClass} for="name">Name</label>
-      <input id="name" name="name" type="text" value={value('name')} class={fieldClass} />
+      <label class={labelClass} for="name">Name<span class="text-danger"> *</span></label>
+      <input id="name" name="name" type="text" value={value('name')} class={fieldClass} autofocus />
       {fieldErrors?.name && <p class={errorClass}>{fieldErrors.name[0]}</p>}
     </div>
 
     <div>
-      <label class={labelClass} for="email">E-Mail</label>
+      <label class={labelClass} for="email">E-Mail<span class="text-danger"> *</span></label>
       <input id="email" name="email" type="email" value={value('email')} class={fieldClass} />
       {fieldErrors?.email && <p class={errorClass}>{fieldErrors.email[0]}</p>}
     </div>
@@ -91,7 +91,7 @@ const errorClass = 'mt-1 text-sm text-danger';
     </div>
 
     <div>
-      <label class={labelClass} for="source">Quelle</label>
+      <label class={labelClass} for="source">Quelle<span class="text-danger"> *</span></label>
       <input id="source" name="source" type="text" value={value('source')} class={fieldClass} list="sources" />
       <datalist id="sources">{sources.map((s) => <option value={s} />)}</datalist>
       {fieldErrors?.source && <p class={errorClass}>{fieldErrors.source[0]}</p>}

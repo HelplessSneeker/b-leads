@@ -90,7 +90,7 @@ const errorClass = 'mt-1 text-sm text-danger';
                 <button type="submit" class="btn btn-primary">Speichern</button>
                 <a
                   href={`/leads/${activity.leadId}`}
-                  class="text-sm font-medium text-muted hover:text-ink"
+                  class="text-sm text-muted hover:text-ink"
                 >
                   Abbrechen
                 </a>
@@ -130,9 +130,9 @@ const errorClass = 'mt-1 text-sm text-danger';
               </div>
             </div>
             {activity.subject && (
-              <p class="mt-2 text-sm font-medium text-ink">{activity.subject}</p>
+              <p class="mt-2 break-words text-sm font-medium text-ink">{activity.subject}</p>
             )}
-            <p class="mt-1 whitespace-pre-wrap text-sm text-ink">{activity.body}</p>
+            <p class="mt-1 whitespace-pre-wrap break-words text-sm text-ink">{activity.body}</p>
           </li>
         ),
       )}
