@@ -1,0 +1,65 @@
+---
+import { actions, isInputError } from 'astro:actions';
+import { eq } from 'drizzle-orm';
+import LeadEditForm from '~/components/LeadEditForm.astro';
+import { db } from '~/db';
+import { leads } from '~/db/schema';
+import Layout from '~/layouts/Layout.astro';
+
+const { id } = Astro.params;
+if (!id) return new Response('Not found', { status: 404 });
+
+const updateResult = Astro.getActionResult(actions.updateLead);
+const deleteResult = Astro.getActionResult(actions.deleteLead);
+
+// PRG: redirect after a successful mutation so a reload doesn't resubmit.
+// On a successful save we go to the read view, not back to the edit form.
+if (deleteResult && !deleteResult.error) return Astro.redirect('/leads', 303);
+if (updateResult && !updateResult.error) return Astro.redirect(`/leads/${id}`, 303);
+
+const lead = db.select().from(leads).where(eq(leads.id, id)).get();
+if (!lead) return new Response('Not found', { status: 404 });
+
+// On a failed mutation, keep what the user typed (middleware parsed a clone, so the
+// original body is still readable here).
+let submitted: FormData | null = null;
+if (Astro.request.method === 'POST') {
+  try {
+    submitted = await Astro.request.formData();
+  } catch {
+    submitted = null;
+  }
+}
+
+const fieldErrors =
+  updateResult && isInputError(updateResult.error) ? updateResult.error.fields : undefined;
+const isConflict =
+  !!updateResult?.error &&
+  !isInputError(updateResult.error) &&
+  updateResult.error.code === 'CONFLICT';
+const conflictMessage = isConflict ? updateResult?.error.message : undefined;
+---
+
+<Layout title={`${lead.name} bearbeiten · b-leads`}>
+  <nav class="text-sm text-gray-500">
+    <a href="/leads" class="hover:text-gray-900">Leads</a>
+    <span class="px-1">/</span>
+    <a href={`/leads/${lead.id}`} class="hover:text-gray-900">{lead.name}</a>
+    <span class="px-1">/</span>
+    <span class="text-gray-900">Bearbeiten</span>
+  </nav>
+
+  <h1 class="mt-2 text-xl font-semibold">{lead.name} bearbeiten</h1>
+
+  <LeadEditForm
+    lead={lead}
+    fieldErrors={fieldErrors}
+    isConflict={isConflict}
+    conflictMessage={conflictMessage}
+    submitted={submitted}
+  />
+
+  <div class="mt-4 max-w-xl">
+    <a href={`/leads/${lead.id}`} class="text-sm text-gray-500 hover:text-gray-900">Abbrechen</a>
+  </div>
+</Layout>
