@@ -57,9 +57,6 @@ const conflictMessage = isConflict ? updateResult?.error.message : undefined;
     isConflict={isConflict}
     conflictMessage={conflictMessage}
     submitted={submitted}
+    cancelHref={`/leads/${lead.id}`}
   />
-
-  <div class="mt-4 max-w-xl">
-    <a href={`/leads/${lead.id}`} class="text-sm text-gray-500 hover:text-gray-900">Abbrechen</a>
-  </div>
 </Layout>

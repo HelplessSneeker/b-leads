@@ -12,9 +12,11 @@ interface Props {
   isConflict?: boolean;
   conflictMessage?: string;
   submitted: FormData | null;
+  // Optional: when set, render an "Abbrechen" link next to the save button.
+  cancelHref?: string;
 }
 
-const { lead, fieldErrors, isConflict, conflictMessage, submitted } = Astro.props;
+const { lead, fieldErrors, isConflict, conflictMessage, submitted, cancelHref } = Astro.props;
 
 // On a failed update, keep what the user typed; otherwise fall back to the stored value.
 const value = (key: string, fallback: string) => {
@@ -106,12 +108,13 @@ const errorClass = 'mt-1 text-sm text-red-600';
     </div>
   </div>
 
-  <div>
+  <div class="flex items-center gap-3">
     <button
       type="submit"
       class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
     >
       Speichern
     </button>
+    {cancelHref && <a href={cancelHref} class="text-sm text-gray-500 hover:text-gray-900">Abbrechen</a>}
   </div>
 </form>
