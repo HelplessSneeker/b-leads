@@ -1,20 +1,24 @@
 ---
-import { and, asc, eq, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
 import { db } from '~/db';
 import { leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
-import { formatDate, formatDateTime } from '~/lib/date';
+import { formatDate, formatDateTime, startOfTomorrowVienna } from '~/lib/date';
 
 const now = new Date();
 // SQLite has no INTERVAL — compute the 7-day staleness threshold in JS.
 const staleThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+// "Due" means the follow-up's calendar day is today (Vienna) or earlier. Use
+// tomorrow's Vienna midnight as an exclusive upper bound so a follow-up dated
+// "today" already appears from 00:00 Vienna, not just from 02:00 (raw UTC `now`).
+const dueThreshold = startOfTomorrowVienna(now);
 
 // 1) Follow-ups that are due (date reached or passed), most overdue first.
 const dueFollowUps = db
   .select()
   .from(leads)
-  .where(and(isNotNull(leads.followUpAt), lte(leads.followUpAt, now)))
+  .where(and(isNotNull(leads.followUpAt), lt(leads.followUpAt, dueThreshold)))
   .orderBy(asc(leads.followUpAt))
   .all();
 
@@ -27,6 +31,11 @@ const staleRaw = db
     and(
       eq(leads.status, 'contacted'),
       or(isNull(leads.lastTouchAt), lt(leads.lastTouchAt, staleThreshold)),
+      // Don't nag about leads that have a future follow-up scheduled — those
+      // surface again on their own date. Already-due ones land in dueFollowUps
+      // (filtered out below via dueIds), so this effectively keeps only leads
+      // without any follow-up.
+      or(isNull(leads.followUpAt), lt(leads.followUpAt, dueThreshold)),
     ),
   )
   .orderBy(sql`${leads.lastTouchAt} is not null`, asc(leads.lastTouchAt))
@@ -52,7 +61,7 @@ const tdClass = 'px-4 py-2 text-gray-600';
   {
     nothingToDo ? (
       <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-600">
-        🎉 Nichts zu tun — alle Leads sind aktuell.
+        Nichts zu tun — alle Leads sind aktuell.
       </p>
     ) : (
       <div class="mt-6 space-y-10">

@@ -6,7 +6,7 @@ import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
 import { db } from '~/db';
 import { LEAD_STATUSES, type LeadStatus, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
-import { formatDate, formatDateTime } from '~/lib/date';
+import { formatDate, formatDateTime, isoDateVienna } from '~/lib/date';
 
 // PRG: after an inline status change, redirect back to the list the user was on
 // (filters preserved via the submitted returnTo) so a reload doesn't resubmit.
@@ -21,12 +21,10 @@ const params = Astro.url.searchParams;
 const returnTo = params.toString() ? `/leads?${params.toString()}` : '/leads';
 
 // Calendar-date comparison in the app timezone (avoids UTC-offset edge cases).
-const isoDate = (d: Date) =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Vienna' }).format(d);
-const todayIso = isoDate(new Date());
+const todayIso = isoDateVienna(new Date());
 function followUpClass(value: Date | null): string {
   if (!value) return 'text-gray-600';
-  const iso = isoDate(value);
+  const iso = isoDateVienna(value);
   if (iso < todayIso) return 'text-red-600 font-medium';
   if (iso === todayIso) return 'text-amber-600 font-medium';
   return 'text-gray-600';
@@ -170,6 +168,7 @@ function statusToggleHref(status: LeadStatus): string {
                     <select
                       name="status"
                       onchange="this.form.requestSubmit()"
+                      onwheel="event.preventDefault()"
                       aria-label="Status ändern"
                       class="rounded border border-gray-300 px-2 py-1 text-xs focus:border-gray-500 focus:outline-none"
                     >
