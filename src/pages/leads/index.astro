@@ -5,9 +5,21 @@ import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
 import { db } from '~/db';
 import { LEAD_STATUSES, type LeadStatus, leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
-import { formatDateTime } from '~/lib/date';
+import { formatDate, formatDateTime } from '~/lib/date';
 
 const params = Astro.url.searchParams;
+
+// Calendar-date comparison in the app timezone (avoids UTC-offset edge cases).
+const isoDate = (d: Date) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Vienna' }).format(d);
+const todayIso = isoDate(new Date());
+function followUpClass(value: Date | null): string {
+  if (!value) return 'text-gray-600';
+  const iso = isoDate(value);
+  if (iso < todayIso) return 'text-red-600 font-medium';
+  if (iso === todayIso) return 'text-amber-600 font-medium';
+  return 'text-gray-600';
+}
 
 // Parse + validate the status filter against the known statuses.
 const statusParam = params.get('status') ?? '';
@@ -126,6 +138,7 @@ function statusToggleHref(status: LeadStatus): string {
               <th class="px-4 py-2 font-medium">E-Mail</th>
               <th class="px-4 py-2 font-medium">Status</th>
               <th class="px-4 py-2 font-medium">Last Touch</th>
+              <th class="px-4 py-2 font-medium">Wiedervorlage</th>
               <th class="px-4 py-2 font-medium">Next Action</th>
             </tr>
           </thead>
@@ -149,6 +162,9 @@ function statusToggleHref(status: LeadStatus): string {
                 </td>
                 <td class="px-4 py-2 text-gray-600">
                   {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}
+                </td>
+                <td class={`px-4 py-2 ${followUpClass(lead.followUpAt)}`}>
+                  {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
                 </td>
                 <td class="px-4 py-2 text-gray-600">{lead.nextAction ?? '—'}</td>
               </tr>

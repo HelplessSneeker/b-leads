@@ -8,6 +8,7 @@ import { activities, leads, type NewActivity, type NewLead } from './schema';
 // lastTouchAt is recomputed from its activities (the new source of truth).
 const now = Date.now();
 const daysAgo = (d: number) => new Date(now - d * 24 * 60 * 60 * 1000);
+const daysFromNow = (d: number) => new Date(now + d * 24 * 60 * 60 * 1000);
 
 const demoLeads: NewLead[] = [
   {
@@ -19,6 +20,7 @@ const demoLeads: NewLead[] = [
     status: 'contacted',
     nextAction: 'Follow-up in 3 Tagen',
     notes: '# Notiz\n\nWeb-Relaunch geplant, **Astro** im Gespräch.',
+    followUpAt: daysAgo(2), // überfällig
   },
   {
     name: 'Markus Huber',
@@ -28,6 +30,7 @@ const demoLeads: NewLead[] = [
     source: 'outreach-wave-1',
     status: 'replied',
     nextAction: 'Angebot schicken',
+    followUpAt: daysFromNow(0), // heute
   },
   {
     name: 'Sophie Klein',
@@ -45,6 +48,7 @@ const demoLeads: NewLead[] = [
     source: 'linkedin',
     status: 'qualified',
     nextAction: 'Termin vereinbaren',
+    followUpAt: daysFromNow(3), // in 3 Tagen
   },
   {
     name: 'Petra Wagner',
@@ -54,6 +58,7 @@ const demoLeads: NewLead[] = [
     source: 'referral',
     status: 'lost',
     notes: 'Budget für dieses Jahr aufgebraucht.',
+    followUpAt: daysFromNow(14), // in 2 Wochen
   },
 ];
 

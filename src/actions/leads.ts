@@ -47,6 +47,7 @@ export interface LeadFields {
   status?: LeadStatus;
   nextAction?: string;
   notes?: string;
+  followUpAt?: Date | null;
 }
 
 export type CreateLeadInput = LeadFields;
@@ -68,6 +69,7 @@ export function createLead<S extends Record<string, unknown>>(
         status: input.status ?? 'new',
         nextAction: input.nextAction,
         notes: input.notes,
+        followUpAt: input.followUpAt,
       })
       .returning()
       .get();
@@ -99,6 +101,7 @@ export function updateLead<S extends Record<string, unknown>>(
         status: nextStatus,
         nextAction: input.nextAction,
         notes: input.notes,
+        followUpAt: input.followUpAt,
         updatedAt: new Date(),
       })
       .where(eq(leads.id, input.id))

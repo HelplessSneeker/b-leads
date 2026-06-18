@@ -1,0 +1,1 @@
+ALTER TABLE `leads` ADD `follow_up_at` integer;

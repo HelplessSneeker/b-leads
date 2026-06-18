@@ -24,6 +24,10 @@ const value = (key: string, fallback: string) => {
 
 const selectedStatus = value('status', lead.status);
 const notesValue = value('notes', lead.notes ?? '');
+const followUpValue = value(
+  'followUpAt',
+  lead.followUpAt ? lead.followUpAt.toISOString().slice(0, 10) : '',
+);
 const sources = getSources();
 
 const fieldClass =
@@ -88,6 +92,11 @@ const errorClass = 'mt-1 text-sm text-red-600';
   <div>
     <label class={labelClass} for="nextAction">Next Action</label>
     <input id="nextAction" name="nextAction" type="text" value={value('nextAction', lead.nextAction ?? '')} class={fieldClass} />
+  </div>
+
+  <div>
+    <label class={labelClass} for="followUpAt">Wiedervorlage</label>
+    <input id="followUpAt" name="followUpAt" type="date" value={followUpValue} class={fieldClass} />
   </div>
 
   <div>

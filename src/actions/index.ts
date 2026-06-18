@@ -38,6 +38,10 @@ const leadInput = z.object({
   status: z.enum(LEAD_STATUSES).default('new'),
   nextAction: z.string().optional(),
   notes: z.string().optional(),
+  // The date input sends '' when cleared; treat that as null (no follow-up).
+  followUpAt: z
+    .preprocess((v) => (v === '' || v == null ? null : v), z.coerce.date().nullable())
+    .optional(),
 });
 
 export const server = {

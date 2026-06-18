@@ -123,6 +123,11 @@ const errorClass = 'mt-1 text-sm text-red-600';
     </div>
 
     <div>
+      <label class={labelClass} for="followUpAt">Wiedervorlage</label>
+      <input id="followUpAt" name="followUpAt" type="date" value={value('followUpAt')} class={fieldClass} />
+    </div>
+
+    <div>
       <label class={labelClass} for="notes">Notizen (Markdown)</label>
       <textarea id="notes" name="notes" rows="6" class={fieldClass}>{value('notes')}</textarea>
     </div>

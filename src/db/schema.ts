@@ -39,6 +39,8 @@ export const leads = sqliteTable(
     status: text('status', { enum: LEAD_STATUSES }).notNull().default('new'),
     nextAction: text('next_action'),
     lastTouchAt: integer('last_touch_at', { mode: 'timestamp' }),
+    // When to follow up next; drives the "Heute fällig" view.
+    followUpAt: integer('follow_up_at', { mode: 'timestamp' }),
     // Markdown
     notes: text('notes'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
