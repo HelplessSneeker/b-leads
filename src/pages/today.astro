@@ -1,0 +1,153 @@
+---
+import { and, asc, eq, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
+import { db } from '~/db';
+import { leads } from '~/db/schema';
+import Layout from '~/layouts/Layout.astro';
+import { formatDate, formatDateTime } from '~/lib/date';
+
+const now = new Date();
+// SQLite has no INTERVAL — compute the 7-day staleness threshold in JS.
+const staleThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+// 1) Follow-ups that are due (date reached or passed), most overdue first.
+const dueFollowUps = db
+  .select()
+  .from(leads)
+  .where(and(isNotNull(leads.followUpAt), lte(leads.followUpAt, now)))
+  .orderBy(asc(leads.followUpAt))
+  .all();
+
+// 2) Contacted leads that have gone quiet for 7+ days (or were never touched),
+//    oldest contact first (NULLS FIRST).
+const staleRaw = db
+  .select()
+  .from(leads)
+  .where(
+    and(
+      eq(leads.status, 'contacted'),
+      or(isNull(leads.lastTouchAt), lt(leads.lastTouchAt, staleThreshold)),
+    ),
+  )
+  .orderBy(sql`${leads.lastTouchAt} is not null`, asc(leads.lastTouchAt))
+  .all();
+
+// A lead already shown as a due follow-up shouldn't appear twice.
+const dueIds = new Set(dueFollowUps.map((l) => l.id));
+const stale = staleRaw.filter((l) => !dueIds.has(l.id));
+
+// Whole days between a past date and now (0 if same day or future).
+const daysSince = (d: Date) =>
+  Math.max(0, Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000)));
+
+const nothingToDo = dueFollowUps.length === 0 && stale.length === 0;
+
+const thClass = 'px-4 py-2 font-medium';
+const tdClass = 'px-4 py-2 text-gray-600';
+---
+
+<Layout title="Heute · b-leads">
+  <h1 class="text-xl font-semibold">Heute fällig</h1>
+
+  {
+    nothingToDo ? (
+      <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-600">
+        🎉 Nichts zu tun — alle Leads sind aktuell.
+      </p>
+    ) : (
+      <div class="mt-6 space-y-10">
+        {dueFollowUps.length > 0 && (
+          <section>
+            <h2 class="font-medium text-gray-900">Wiedervorlage fällig ({dueFollowUps.length})</h2>
+            <div class="mt-3 overflow-x-auto rounded border border-gray-200 bg-white">
+              <table class="w-full text-left text-sm">
+                <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th class={thClass}>Name</th>
+                    <th class={thClass}>Firma</th>
+                    <th class={thClass}>Status</th>
+                    <th class={thClass}>Wiedervorlage</th>
+                    <th class={thClass}>Tage überfällig</th>
+                    <th class={thClass} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {dueFollowUps.map((lead) => (
+                    <tr
+                      class="cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                      onclick={`location.href='/leads/${lead.id}'`}
+                    >
+                      <td class="px-4 py-2 font-medium text-gray-900">{lead.name}</td>
+                      <td class={tdClass}>{lead.company ?? '—'}</td>
+                      <td class="px-4 py-2">
+                        <span
+                          class={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[lead.status]}`}
+                        >
+                          {STATUS_LABELS[lead.status]}
+                        </span>
+                      </td>
+                      <td class={tdClass}>{formatDate(lead.followUpAt)}</td>
+                      <td class={tdClass}>{lead.followUpAt ? daysSince(lead.followUpAt) : 0}</td>
+                      <td class="px-4 py-2">
+                        <a
+                          href={`/leads/${lead.id}`}
+                          class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                        >
+                          → zum Lead
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {stale.length > 0 && (
+          <section>
+            <h2 class="font-medium text-gray-900">Stale Follow-ups (7+ Tage) ({stale.length})</h2>
+            <div class="mt-3 overflow-x-auto rounded border border-gray-200 bg-white">
+              <table class="w-full text-left text-sm">
+                <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th class={thClass}>Name</th>
+                    <th class={thClass}>Firma</th>
+                    <th class={thClass}>Last Touch</th>
+                    <th class={thClass}>Tage seit Last Touch</th>
+                    <th class={thClass} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {stale.map((lead) => (
+                    <tr
+                      class="cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                      onclick={`location.href='/leads/${lead.id}'`}
+                    >
+                      <td class="px-4 py-2 font-medium text-gray-900">{lead.name}</td>
+                      <td class={tdClass}>{lead.company ?? '—'}</td>
+                      <td class={tdClass}>
+                        {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : 'nie'}
+                      </td>
+                      <td class={tdClass}>
+                        {lead.lastTouchAt ? daysSince(lead.lastTouchAt) : '—'}
+                      </td>
+                      <td class="px-4 py-2">
+                        <a
+                          href={`/leads/${lead.id}`}
+                          class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                        >
+                          → zum Lead
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+      </div>
+    )
+  }
+</Layout>
