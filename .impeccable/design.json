@@ -4,41 +4,170 @@
   "title": "Design System: b-leads",
   "extensions": {
     "colorMeta": {
-      "bg": { "role": "neutral", "displayName": "Surface Base", "canonical": "oklch(1 0 0)", "modes": { "light": "oklch(1 0 0)", "dark": "oklch(0.16 0 0)" }, "tonalRamp": ["oklch(0.16 0 0)", "oklch(0.20 0 0)", "oklch(0.235 0 0)", "oklch(0.30 0 0)", "oklch(0.47 0 0)", "oklch(0.68 0 0)", "oklch(0.90 0 0)", "oklch(1 0 0)"] },
-      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "oklch(0.975 0 0)", "modes": { "light": "oklch(0.975 0 0)", "dark": "oklch(0.20 0 0)" } },
-      "surface-sunken": { "role": "neutral", "displayName": "Surface Sunken", "canonical": "oklch(0.945 0 0)", "modes": { "light": "oklch(0.945 0 0)", "dark": "oklch(0.235 0 0)" } },
-      "border": { "role": "neutral", "displayName": "Hairline Border", "canonical": "oklch(0.90 0 0)", "modes": { "light": "oklch(0.90 0 0)", "dark": "oklch(0.30 0 0)" } },
-      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.24 0.012 245)", "modes": { "light": "oklch(0.24 0.012 245)", "dark": "oklch(0.93 0 0)" } },
-      "muted": { "role": "neutral", "displayName": "Muted", "canonical": "oklch(0.47 0.012 245)", "modes": { "light": "oklch(0.47 0.012 245)", "dark": "oklch(0.68 0 0)" } },
-      "accent": { "role": "primary", "displayName": "Console Indigo", "canonical": "oklch(0.50 0.17 245)", "modes": { "light": "oklch(0.50 0.17 245)", "dark": "oklch(0.62 0.16 245)" }, "tonalRamp": ["oklch(0.20 0.08 245)", "oklch(0.30 0.12 245)", "oklch(0.40 0.16 245)", "oklch(0.50 0.17 245)", "oklch(0.62 0.16 245)", "oklch(0.72 0.13 245)", "oklch(0.84 0.08 245)", "oklch(0.94 0.03 245)"] },
-      "accent-text": { "role": "primary", "displayName": "Console Indigo Text", "canonical": "oklch(0.45 0.17 245)", "modes": { "light": "oklch(0.45 0.17 245)", "dark": "oklch(0.80 0.13 245)" } },
-      "status-new": { "role": "tertiary", "displayName": "Status · Neu", "canonical": "oklch(0.40 0 0)", "modes": { "light": "oklch(0.40 0 0)", "dark": "oklch(0.72 0 0)" } },
-      "status-contacted": { "role": "tertiary", "displayName": "Status · Kontaktiert", "canonical": "oklch(0.45 0.15 225)", "modes": { "light": "oklch(0.45 0.15 225)", "dark": "oklch(0.82 0.10 225)" } },
-      "status-replied": { "role": "tertiary", "displayName": "Status · Geantwortet", "canonical": "oklch(0.45 0.18 295)", "modes": { "light": "oklch(0.45 0.18 295)", "dark": "oklch(0.82 0.12 295)" } },
-      "status-qualified": { "role": "tertiary", "displayName": "Status · Qualifiziert", "canonical": "oklch(0.46 0.12 72)", "modes": { "light": "oklch(0.46 0.12 72)", "dark": "oklch(0.83 0.11 72)" } },
-      "status-won": { "role": "tertiary", "displayName": "Status · Gewonnen", "canonical": "oklch(0.43 0.13 150)", "modes": { "light": "oklch(0.43 0.13 150)", "dark": "oklch(0.80 0.12 150)" } },
-      "status-lost": { "role": "tertiary", "displayName": "Status · Verloren", "canonical": "oklch(0.50 0.18 25)", "modes": { "light": "oklch(0.50 0.18 25)", "dark": "oklch(0.78 0.15 25)" } }
+      "bg": {
+        "role": "neutral",
+        "displayName": "Surface Base",
+        "canonical": "oklch(1 0 0)",
+        "modes": { "light": "oklch(1 0 0)", "dark": "oklch(0.16 0 0)" },
+        "tonalRamp": [
+          "oklch(0.16 0 0)",
+          "oklch(0.20 0 0)",
+          "oklch(0.235 0 0)",
+          "oklch(0.30 0 0)",
+          "oklch(0.47 0 0)",
+          "oklch(0.68 0 0)",
+          "oklch(0.90 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "oklch(0.975 0 0)",
+        "modes": { "light": "oklch(0.975 0 0)", "dark": "oklch(0.20 0 0)" }
+      },
+      "surface-sunken": {
+        "role": "neutral",
+        "displayName": "Surface Sunken",
+        "canonical": "oklch(0.945 0 0)",
+        "modes": { "light": "oklch(0.945 0 0)", "dark": "oklch(0.235 0 0)" }
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline Border",
+        "canonical": "oklch(0.90 0 0)",
+        "modes": { "light": "oklch(0.90 0 0)", "dark": "oklch(0.30 0 0)" }
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.24 0.012 245)",
+        "modes": { "light": "oklch(0.24 0.012 245)", "dark": "oklch(0.93 0 0)" }
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "oklch(0.47 0.012 245)",
+        "modes": { "light": "oklch(0.47 0.012 245)", "dark": "oklch(0.68 0 0)" }
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Console Indigo",
+        "canonical": "oklch(0.50 0.17 245)",
+        "modes": { "light": "oklch(0.50 0.17 245)", "dark": "oklch(0.62 0.16 245)" },
+        "tonalRamp": [
+          "oklch(0.20 0.08 245)",
+          "oklch(0.30 0.12 245)",
+          "oklch(0.40 0.16 245)",
+          "oklch(0.50 0.17 245)",
+          "oklch(0.62 0.16 245)",
+          "oklch(0.72 0.13 245)",
+          "oklch(0.84 0.08 245)",
+          "oklch(0.94 0.03 245)"
+        ]
+      },
+      "accent-text": {
+        "role": "primary",
+        "displayName": "Console Indigo Text",
+        "canonical": "oklch(0.45 0.17 245)",
+        "modes": { "light": "oklch(0.45 0.17 245)", "dark": "oklch(0.80 0.13 245)" }
+      },
+      "status-new": {
+        "role": "tertiary",
+        "displayName": "Status · Neu",
+        "canonical": "oklch(0.40 0 0)",
+        "modes": { "light": "oklch(0.40 0 0)", "dark": "oklch(0.72 0 0)" }
+      },
+      "status-contacted": {
+        "role": "tertiary",
+        "displayName": "Status · Kontaktiert",
+        "canonical": "oklch(0.45 0.15 225)",
+        "modes": { "light": "oklch(0.45 0.15 225)", "dark": "oklch(0.82 0.10 225)" }
+      },
+      "status-replied": {
+        "role": "tertiary",
+        "displayName": "Status · Geantwortet",
+        "canonical": "oklch(0.45 0.18 295)",
+        "modes": { "light": "oklch(0.45 0.18 295)", "dark": "oklch(0.82 0.12 295)" }
+      },
+      "status-qualified": {
+        "role": "tertiary",
+        "displayName": "Status · Qualifiziert",
+        "canonical": "oklch(0.46 0.12 72)",
+        "modes": { "light": "oklch(0.46 0.12 72)", "dark": "oklch(0.83 0.11 72)" }
+      },
+      "status-won": {
+        "role": "tertiary",
+        "displayName": "Status · Gewonnen",
+        "canonical": "oklch(0.43 0.13 150)",
+        "modes": { "light": "oklch(0.43 0.13 150)", "dark": "oklch(0.80 0.12 150)" }
+      },
+      "status-lost": {
+        "role": "tertiary",
+        "displayName": "Status · Verloren",
+        "canonical": "oklch(0.50 0.18 25)",
+        "modes": { "light": "oklch(0.50 0.18 25)", "dark": "oklch(0.78 0.15 25)" }
+      }
     },
     "typographyMeta": {
-      "page-title": { "displayName": "Page Title", "purpose": "Page headers (Leads, Heute). One per page; the type ceiling." },
+      "page-title": {
+        "displayName": "Page Title",
+        "purpose": "Page headers (Leads, Heute). One per page; the type ceiling."
+      },
       "section": { "displayName": "Section", "purpose": "Sub-section headers and dialog titles." },
-      "title": { "displayName": "Title", "purpose": "Row-level emphasis: lead names, card headers." },
-      "body": { "displayName": "Body", "purpose": "Default UI and prose text; prose capped 65-75ch." },
-      "label": { "displayName": "Label", "purpose": "Table column headers and field labels. The only uppercase-tracked use." },
-      "data": { "displayName": "Data (Mono)", "purpose": "IBM Plex Mono, tabular numerals: dates, counts, emails, IDs, follow-ups. The console's signature." }
+      "title": {
+        "displayName": "Title",
+        "purpose": "Row-level emphasis: lead names, card headers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default UI and prose text; prose capped 65-75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Table column headers and field labels. The only uppercase-tracked use."
+      },
+      "data": {
+        "displayName": "Data (Mono)",
+        "purpose": "IBM Plex Mono, tabular numerals: dates, counts, emails, IDs, follow-ups. The console's signature."
+      }
     },
     "shadows": [
-      { "name": "overlay", "value": "0 8px 24px -6px oklch(0 0 0 / 0.18)", "purpose": "Lift true overlays (dropdown, popover, dialog, command palette) off the page. Dark mode uses /0.55." },
-      { "name": "focus-ring", "value": "0 0 0 2px var(--bg), 0 0 0 4px var(--accent)", "purpose": "Keyboard focus indicator. Load-bearing: the console is keyboard-forward." }
+      {
+        "name": "overlay",
+        "value": "0 8px 24px -6px oklch(0 0 0 / 0.18)",
+        "purpose": "Lift true overlays (dropdown, popover, dialog, command palette) off the page. Dark mode uses /0.55."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 2px var(--bg), 0 0 0 4px var(--accent)",
+        "purpose": "Keyboard focus indicator. Load-bearing: the console is keyboard-forward."
+      }
     ],
     "motion": [
-      { "name": "ease-out-quart", "value": "cubic-bezier(0.25, 1, 0.5, 1)", "purpose": "Default easing for state transitions. Exponential ease-out, no bounce." },
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Default easing for state transitions. Exponential ease-out, no bounce."
+      },
       { "name": "dur-fast", "value": "150ms", "purpose": "Hover, focus, small state feedback." },
-      { "name": "dur-base", "value": "200ms", "purpose": "Selection, panel/disclosure transitions. Ceiling for in-flow UI." }
+      {
+        "name": "dur-base",
+        "value": "200ms",
+        "purpose": "Selection, panel/disclosure transitions. Ceiling for in-flow UI."
+      }
     ],
     "breakpoints": [
-      { "name": "md", "value": "768px", "purpose": "Below: collapse the lead table to a stacked row layout; nav becomes a compact menu." },
-      { "name": "lg", "value": "1024px", "purpose": "Above: full table density, all columns visible." }
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Below: collapse the lead table to a stacked row layout; nav becomes a compact menu."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Above: full table density, all columns visible."
+      }
     ]
   },
   "components": [
@@ -102,12 +231,36 @@
       "Dual-mode (dark + light), adapting to ambient light."
     ],
     "rules": [
-      { "name": "The Rationed Accent Rule", "body": "Console Indigo is interaction, full stop. If it appears on something the operator cannot click, focus, or select, it is wrong. Target <=10% of any screen.", "section": "colors" },
-      { "name": "The Two Vocabularies Rule", "body": "Interaction color (indigo) and state color (the six status hues) are separate languages and never overlap. The accent is never a status; a status hue is never an action.", "section": "colors" },
-      { "name": "The Meaning-Only Color Rule", "body": "Neutrals carry all structure. A pixel is colored only if the color means something (interaction or state). Decorative color is forbidden.", "section": "colors" },
-      { "name": "The Mono-for-Data Rule", "body": "If a value is scanned down a column or compared between rows (date, count, email, ID, currency), it is set in IBM Plex Mono with tabular numerals. Prose and labels are Plex Sans.", "section": "typography" },
-      { "name": "The Fixed-Scale Rule", "body": "Type sizes are fixed rem, never fluid clamp(). The operator views at a consistent DPI.", "section": "typography" },
-      { "name": "The Flat-Console Rule", "body": "Resting surfaces are flat. Shadows belong only to things floating above the page (overlays) and to focus.", "section": "elevation" }
+      {
+        "name": "The Rationed Accent Rule",
+        "body": "Console Indigo is interaction, full stop. If it appears on something the operator cannot click, focus, or select, it is wrong. Target <=10% of any screen.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Vocabularies Rule",
+        "body": "Interaction color (indigo) and state color (the six status hues) are separate languages and never overlap. The accent is never a status; a status hue is never an action.",
+        "section": "colors"
+      },
+      {
+        "name": "The Meaning-Only Color Rule",
+        "body": "Neutrals carry all structure. A pixel is colored only if the color means something (interaction or state). Decorative color is forbidden.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-for-Data Rule",
+        "body": "If a value is scanned down a column or compared between rows (date, count, email, ID, currency), it is set in IBM Plex Mono with tabular numerals. Prose and labels are Plex Sans.",
+        "section": "typography"
+      },
+      {
+        "name": "The Fixed-Scale Rule",
+        "body": "Type sizes are fixed rem, never fluid clamp(). The operator views at a consistent DPI.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-Console Rule",
+        "body": "Resting surfaces are flat. Shadows belong only to things floating above the page (overlays) and to focus.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "Do set every scanned/compared value (dates, counts, emails, IDs, follow-ups) in IBM Plex Mono with tabular numerals.",

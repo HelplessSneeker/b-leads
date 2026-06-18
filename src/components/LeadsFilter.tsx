@@ -53,18 +53,20 @@ export default function LeadsFilter({ selected, query }: LeadsFilterProps) {
           }
         }}
         placeholder="Suche Name, E-Mail, Firma…"
-        className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+        className="w-64 rounded-sm border border-border bg-bg px-2.5 py-1.5 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent sm:w-72"
       />
       <div className="flex flex-wrap gap-2">
         {LEAD_STATUSES.map((s) => {
           const isActive = active.has(s);
+          // Always the status hue; selection is signalled by the accent ring (a
+          // non-color cue), keeping the two vocabularies separate.
           return (
             <button
               key={s}
               type="button"
               onClick={() => toggleStatus(s)}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                isActive ? STATUS_CLASSES[s] : 'bg-white text-gray-500 ring-1 ring-gray-300'
+              className={`tag px-2.5 py-1 transition-shadow ${STATUS_CLASSES[s]} ${
+                isActive ? 'ring-2 ring-accent' : 'opacity-70 hover:opacity-100'
               }`}
               aria-pressed={isActive}
             >

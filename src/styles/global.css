@@ -1,11 +1,346 @@
+/* IBM Plex superfamily, self-hosted (offline-friendly for a Tailscale-only tool).
+   Sans 400/500/600 = body / data-weight fallback / titles+labels.
+   Mono 400/500     = the data layer (450 spec ≈ 500 static). */
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 @import "tailwindcss";
 
-/* Minimal base styling for rendered lead notes (Markdown -> HTML). No
-   @tailwindcss/typography dependency; just enough so lists/headings aren't
-   unstyled. Applied to the `set:html` container on the lead read view. */
+/* The `dark:` variant follows the OS (system-adaptive console, per DESIGN.md).
+   No class toggle — `prefers-color-scheme` is the switch. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Semantic tokens — LIGHT is canonical (the bright data-desk). All OKLCH.
+   Dark values override under prefers-color-scheme below. Tailwind utilities
+   bind to these live via `@theme inline`, so the media-query swap flows
+   through `bg-surface`, `text-ink`, … with no rebuild.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg: oklch(1 0 0);
+  --surface: oklch(0.975 0 0);
+  --surface-sunken: oklch(0.945 0 0);
+  --border: oklch(0.9 0 0);
+  --ink: oklch(0.24 0.012 245);
+  --muted: oklch(0.47 0.012 245);
+
+  /* The one interaction color. Indigo 245°. */
+  --accent: oklch(0.5 0.17 245);
+  --accent-hover: oklch(0.45 0.17 245);
+  --accent-text: oklch(0.45 0.17 245);
+
+  /* Semantic signals (reuse the status vocabulary): lost-red, qualified-amber,
+     won-green. Used by follow-up urgency, errors, and import outcome. */
+  --danger: oklch(0.5 0.18 25);
+  --danger-bg: oklch(0.96 0.03 25);
+  --danger-border: oklch(0.88 0.06 25);
+  --warning: oklch(0.46 0.12 72);
+  --success: oklch(0.43 0.13 150);
+  --success-bg: oklch(0.96 0.03 150);
+  --success-border: oklch(0.86 0.06 150);
+
+  /* Status-tag vocabulary — fg (saturated hue) + bg (pale tint). */
+  --tag-new-fg: oklch(0.4 0 0);
+  --tag-new-bg: oklch(0.93 0 0);
+  --tag-contacted-fg: oklch(0.45 0.15 225);
+  --tag-contacted-bg: oklch(0.95 0.035 225);
+  --tag-replied-fg: oklch(0.45 0.18 295);
+  --tag-replied-bg: oklch(0.95 0.04 295);
+  --tag-qualified-fg: oklch(0.46 0.12 72);
+  --tag-qualified-bg: oklch(0.95 0.05 72);
+  --tag-won-fg: oklch(0.43 0.13 150);
+  --tag-won-bg: oklch(0.95 0.04 150);
+  --tag-lost-fg: oklch(0.5 0.18 25);
+  --tag-lost-bg: oklch(0.95 0.035 25);
+
+  /* Activity-type vocabulary — kept clear of the 245° accent so a badge never
+     reads as an action. linkedin moved off indigo onto violet/purple. */
+  --tag-act-emailsent-fg: oklch(0.45 0.15 225);
+  --tag-act-emailsent-bg: oklch(0.95 0.035 225);
+  --tag-act-emailrecv-fg: oklch(0.46 0.11 205);
+  --tag-act-emailrecv-bg: oklch(0.95 0.035 205);
+  --tag-act-lisent-fg: oklch(0.45 0.18 295);
+  --tag-act-lisent-bg: oklch(0.95 0.04 295);
+  --tag-act-lirecv-fg: oklch(0.46 0.16 320);
+  --tag-act-lirecv-bg: oklch(0.95 0.04 320);
+  --tag-act-call-fg: oklch(0.43 0.13 150);
+  --tag-act-call-bg: oklch(0.95 0.04 150);
+  --tag-act-meeting-fg: oklch(0.46 0.12 72);
+  --tag-act-meeting-bg: oklch(0.95 0.05 72);
+  --tag-act-note-fg: oklch(0.4 0 0);
+  --tag-act-note-bg: oklch(0.93 0 0);
+
+  --overlay-shadow: 0 8px 24px -6px oklch(0 0 0 / 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: oklch(0.16 0 0);
+    --surface: oklch(0.2 0 0);
+    --surface-sunken: oklch(0.235 0 0);
+    --border: oklch(0.3 0 0);
+    --ink: oklch(0.93 0 0);
+    --muted: oklch(0.68 0 0);
+
+    --accent: oklch(0.62 0.16 245);
+    --accent-hover: oklch(0.57 0.16 245);
+    --accent-text: oklch(0.8 0.13 245);
+
+    --danger: oklch(0.78 0.15 25);
+    --danger-bg: oklch(0.78 0.15 25 / 0.14);
+    --danger-border: oklch(0.78 0.15 25 / 0.4);
+    --warning: oklch(0.83 0.11 72);
+    --success: oklch(0.8 0.12 150);
+    --success-bg: oklch(0.8 0.12 150 / 0.14);
+    --success-border: oklch(0.8 0.12 150 / 0.4);
+
+    --tag-new-fg: oklch(0.72 0 0);
+    --tag-new-bg: oklch(1 0 0 / 0.08);
+    --tag-contacted-fg: oklch(0.82 0.1 225);
+    --tag-contacted-bg: oklch(0.82 0.1 225 / 0.14);
+    --tag-replied-fg: oklch(0.82 0.12 295);
+    --tag-replied-bg: oklch(0.82 0.12 295 / 0.14);
+    --tag-qualified-fg: oklch(0.83 0.11 72);
+    --tag-qualified-bg: oklch(0.83 0.11 72 / 0.14);
+    --tag-won-fg: oklch(0.8 0.12 150);
+    --tag-won-bg: oklch(0.8 0.12 150 / 0.14);
+    --tag-lost-fg: oklch(0.78 0.15 25);
+    --tag-lost-bg: oklch(0.78 0.15 25 / 0.14);
+
+    --tag-act-emailsent-fg: oklch(0.82 0.1 225);
+    --tag-act-emailsent-bg: oklch(0.82 0.1 225 / 0.14);
+    --tag-act-emailrecv-fg: oklch(0.82 0.09 205);
+    --tag-act-emailrecv-bg: oklch(0.82 0.09 205 / 0.14);
+    --tag-act-lisent-fg: oklch(0.82 0.12 295);
+    --tag-act-lisent-bg: oklch(0.82 0.12 295 / 0.14);
+    --tag-act-lirecv-fg: oklch(0.82 0.12 320);
+    --tag-act-lirecv-bg: oklch(0.82 0.12 320 / 0.14);
+    --tag-act-call-fg: oklch(0.8 0.12 150);
+    --tag-act-call-bg: oklch(0.8 0.12 150 / 0.14);
+    --tag-act-meeting-fg: oklch(0.83 0.11 72);
+    --tag-act-meeting-bg: oklch(0.83 0.11 72 / 0.14);
+    --tag-act-note-fg: oklch(0.72 0 0);
+    --tag-act-note-bg: oklch(1 0 0 / 0.08);
+
+    --overlay-shadow: 0 8px 24px -6px oklch(0 0 0 / 0.55);
+  }
+}
+
+/* Bind tokens to Tailwind utilities. `inline` keeps the var reference live so
+   the dark-mode swap above flows through every `bg-*`/`text-*`/`border-*`. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Load-bearing focus ring (keyboard-forward console): the focus-ring token,
+     a 2px accent halo with a bg-colored gap, on every interactive control. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 4px var(--accent);
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  /* The status / activity tag — squared, label-type, reads as data not badge.
+     Replaces every rounded-full pill. */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 2px;
+    padding: 1px 6px;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .tag-new {
+    background: var(--tag-new-bg);
+    color: var(--tag-new-fg);
+  }
+  .tag-contacted {
+    background: var(--tag-contacted-bg);
+    color: var(--tag-contacted-fg);
+  }
+  .tag-replied {
+    background: var(--tag-replied-bg);
+    color: var(--tag-replied-fg);
+  }
+  .tag-qualified {
+    background: var(--tag-qualified-bg);
+    color: var(--tag-qualified-fg);
+  }
+  .tag-won {
+    background: var(--tag-won-bg);
+    color: var(--tag-won-fg);
+  }
+  .tag-lost {
+    background: var(--tag-lost-bg);
+    color: var(--tag-lost-fg);
+  }
+
+  .tag-act-email_sent {
+    background: var(--tag-act-emailsent-bg);
+    color: var(--tag-act-emailsent-fg);
+  }
+  .tag-act-email_received {
+    background: var(--tag-act-emailrecv-bg);
+    color: var(--tag-act-emailrecv-fg);
+  }
+  .tag-act-linkedin_sent {
+    background: var(--tag-act-lisent-bg);
+    color: var(--tag-act-lisent-fg);
+  }
+  .tag-act-linkedin_received {
+    background: var(--tag-act-lirecv-bg);
+    color: var(--tag-act-lirecv-fg);
+  }
+  .tag-act-call {
+    background: var(--tag-act-call-bg);
+    color: var(--tag-act-call-fg);
+  }
+  .tag-act-meeting {
+    background: var(--tag-act-meeting-bg);
+    color: var(--tag-act-meeting-fg);
+  }
+  .tag-act-note {
+    background: var(--tag-act-note-bg);
+    color: var(--tag-act-note-fg);
+  }
+
+  /* Button vocabulary. One primary (filled indigo) per view; the rest secondary
+     or ghost. 3px radius, compact, 150ms feedback. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease,
+      border-color 150ms ease;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: oklch(1 0 0);
+    border: 1px solid transparent;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface-sunken);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--danger-bg);
+  }
+
+  /* Field vocabulary: bg fill, 1px border, accent border on focus (the halo is
+     the global focus ring). */
+  .field {
+    width: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    transition: border-color 150ms ease;
+  }
+  .field::placeholder {
+    color: var(--muted);
+  }
+  .field:focus {
+    border-color: var(--accent);
+  }
+  .field:disabled {
+    background: var(--surface-sunken);
+    color: var(--muted);
+  }
+
+  /* Data layer: anything scanned/compared down a column. Mono + tabular nums. */
+  .data {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Rendered Markdown for lead notes — on tokens, dark-aware. */
 .notes-rendered {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--ink);
 }
 .notes-rendered > * + * {
   margin-top: 0.5rem;
@@ -31,17 +366,35 @@
   padding-left: 1.25rem;
 }
 .notes-rendered code {
-  font-family: ui-monospace, monospace;
-  background: #f3f4f6;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--surface-sunken);
   padding: 0 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: 2px;
 }
 .notes-rendered a {
-  color: #2563eb;
+  color: var(--accent-text);
   text-decoration: underline;
 }
 .notes-rendered blockquote {
-  border-left: 2px solid #d1d5db;
+  border-left: 2px solid var(--border);
   padding-left: 0.75rem;
-  color: #6b7280;
+  color: var(--muted);
+}
+
+/* Reduced motion: collapse every transition/animation to an instant swap.
+   The universal selector + !important are the canonical pattern here — they must
+   override utility-level transition durations, so both lints are suppressed. */
+@media (prefers-reduced-motion: reduce) {
+  /* biome-ignore lint/style/noDescendingSpecificity: global reduced-motion reset */
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: must beat utility transitions */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must beat utility animations */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must beat smooth scrolling */
+    scroll-behavior: auto !important;
+  }
 }

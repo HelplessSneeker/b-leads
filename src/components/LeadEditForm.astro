@@ -32,15 +32,14 @@ const followUpValue = value(
 );
 const sources = getSources();
 
-const fieldClass =
-  'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
-const labelClass = 'block text-sm font-medium text-gray-700';
-const errorClass = 'mt-1 text-sm text-red-600';
+const fieldClass = 'field mt-1';
+const labelClass = 'block text-sm font-medium text-ink';
+const errorClass = 'mt-1 text-sm text-danger';
 ---
 
 {
   isConflict && (
-    <div class="mt-4 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div class="mt-4 rounded-sm border border-danger-border bg-danger-bg p-4 text-sm text-danger">
       {conflictMessage}
     </div>
   )
@@ -109,12 +108,7 @@ const errorClass = 'mt-1 text-sm text-red-600';
   </div>
 
   <div class="flex items-center gap-3">
-    <button
-      type="submit"
-      class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-    >
-      Speichern
-    </button>
-    {cancelHref && <a href={cancelHref} class="text-sm text-gray-500 hover:text-gray-900">Abbrechen</a>}
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    {cancelHref && <a href={cancelHref} class="text-sm text-muted hover:text-ink">Abbrechen</a>}
   </div>
 </form>

@@ -23,11 +23,11 @@ const returnTo = params.toString() ? `/leads?${params.toString()}` : '/leads';
 // Calendar-date comparison in the app timezone (avoids UTC-offset edge cases).
 const todayIso = isoDateVienna(new Date());
 function followUpClass(value: Date | null): string {
-  if (!value) return 'text-gray-600';
+  if (!value) return 'text-muted';
   const iso = isoDateVienna(value);
-  if (iso < todayIso) return 'text-red-600 font-medium';
-  if (iso === todayIso) return 'text-amber-600 font-medium';
-  return 'text-gray-600';
+  if (iso < todayIso) return 'text-danger font-medium';
+  if (iso === todayIso) return 'text-warning font-medium';
+  return 'text-muted';
 }
 
 // Parse + validate the status filter against the known statuses.
@@ -86,20 +86,10 @@ function statusToggleHref(status: LeadStatus): string {
 
 <Layout title="Leads · b-leads">
   <div class="flex items-center justify-between">
-    <h1 class="text-xl font-semibold">Leads</h1>
+    <h1 class="text-2xl font-semibold tracking-[-0.01em]">Leads</h1>
     <div class="flex items-center gap-2">
-      <a
-        href="/leads/import"
-        class="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
-      >
-        CSV-Import
-      </a>
-      <a
-        href="/leads/new"
-        class="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-      >
-        Neuer Lead
-      </a>
+      <a href="/leads/import" class="btn btn-secondary">CSV-Import</a>
+      <a href="/leads/new" class="btn btn-primary">Neuer Lead</a>
     </div>
   </div>
 
@@ -112,16 +102,16 @@ function statusToggleHref(status: LeadStatus): string {
             href={statusToggleHref(s)}
             aria-pressed={isActive}
             class:list={[
-              'flex min-w-[7rem] shrink-0 flex-col rounded border bg-white px-3 py-2',
-              isActive ? 'ring-2 ring-gray-900' : 'border-gray-200 hover:bg-gray-50',
+              'flex min-w-[7rem] shrink-0 flex-col gap-1.5 rounded-sm border bg-surface px-3 py-2 transition-colors',
+              isActive
+                ? 'border-transparent ring-2 ring-accent'
+                : 'border-border hover:bg-surface-sunken',
             ]}
           >
-            <span
-              class={`self-start rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[s]}`}
-            >
-              {STATUS_LABELS[s]}
+            <span class={`tag self-start ${STATUS_CLASSES[s]}`}>{STATUS_LABELS[s]}</span>
+            <span class="font-mono text-xl font-medium tabular-nums text-ink">
+              {countByStatus.get(s) ?? 0}
             </span>
-            <span class="mt-1 text-2xl font-semibold text-gray-900">{countByStatus.get(s) ?? 0}</span>
           </a>
         );
       })
@@ -134,34 +124,39 @@ function statusToggleHref(status: LeadStatus): string {
 
   {
     rows.length === 0 ? (
-      <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+      <p class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
         Keine Leads gefunden.
       </p>
     ) : (
-      <div class="mt-6 overflow-x-auto rounded border border-gray-200 bg-white">
+      <div class="mt-6 overflow-x-auto rounded-sm border border-border bg-surface">
         <table class="w-full text-left text-sm">
-          <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+          <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
             <tr>
-              <th class="px-4 py-2 font-medium">Name</th>
-              <th class="px-4 py-2 font-medium">Firma</th>
-              <th class="px-4 py-2 font-medium">E-Mail</th>
-              <th class="px-4 py-2 font-medium">Status</th>
-              <th class="px-4 py-2 font-medium">Last Touch</th>
-              <th class="px-4 py-2 font-medium">Wiedervorlage</th>
-              <th class="px-4 py-2 font-medium">Next Action</th>
+              <th class="px-3 py-2 font-semibold">Name</th>
+              <th class="px-3 py-2 font-semibold">Firma</th>
+              <th class="px-3 py-2 font-semibold">E-Mail</th>
+              <th class="px-3 py-2 font-semibold">Status</th>
+              <th class="px-3 py-2 font-semibold">Last Touch</th>
+              <th class="px-3 py-2 font-semibold">Wiedervorlage</th>
+              <th class="px-3 py-2 font-semibold">Next Action</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((lead) => (
-              <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                <td class="px-4 py-2">
-                  <a href={`/leads/${lead.id}`} class="font-medium text-gray-900 hover:underline">
+              <tr class="group border-b border-border last:border-0 hover:bg-surface-sunken">
+                <td class="px-3 py-1.5">
+                  <a
+                    href={`/leads/${lead.id}`}
+                    class="font-medium text-ink transition-colors group-hover:text-accent-text"
+                  >
                     {lead.name}
                   </a>
                 </td>
-                <td class="px-4 py-2 text-gray-600">{lead.company ?? '—'}</td>
-                <td class="px-4 py-2 text-gray-600">{lead.email}</td>
-                <td class="px-4 py-2">
+                <td class="px-3 py-1.5 text-muted">{lead.company ?? '—'}</td>
+                <td class="px-3 py-1.5">
+                  <span class="data text-ink">{lead.email}</span>
+                </td>
+                <td class="px-3 py-1.5">
                   <form method="POST" action={actions.updateLeadStatus}>
                     <input type="hidden" name="id" value={lead.id} />
                     <input type="hidden" name="returnTo" value={returnTo} />
@@ -170,7 +165,7 @@ function statusToggleHref(status: LeadStatus): string {
                       onchange="this.form.requestSubmit()"
                       onwheel="event.preventDefault()"
                       aria-label="Status ändern"
-                      class="rounded border border-gray-300 px-2 py-1 text-xs focus:border-gray-500 focus:outline-none"
+                      class="rounded-sm border border-border bg-bg px-2 py-1 text-xs text-ink transition-colors focus:border-accent"
                     >
                       {LEAD_STATUSES.map((s) => (
                         <option value={s} selected={s === lead.status}>
@@ -180,13 +175,17 @@ function statusToggleHref(status: LeadStatus): string {
                     </select>
                   </form>
                 </td>
-                <td class="px-4 py-2 text-gray-600">
-                  {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}
+                <td class="px-3 py-1.5">
+                  <span class="data text-muted">
+                    {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}
+                  </span>
                 </td>
-                <td class={`px-4 py-2 ${followUpClass(lead.followUpAt)}`}>
-                  {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
+                <td class="px-3 py-1.5">
+                  <span class={`data ${followUpClass(lead.followUpAt)}`}>
+                    {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
+                  </span>
                 </td>
-                <td class="px-4 py-2 text-gray-600">{lead.nextAction ?? '—'}</td>
+                <td class="px-3 py-1.5 text-muted">{lead.nextAction ?? '—'}</td>
               </tr>
             ))}
           </tbody>

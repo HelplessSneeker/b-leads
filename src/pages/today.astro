@@ -51,26 +51,28 @@ const daysSince = (d: Date) =>
 
 const nothingToDo = dueFollowUps.length === 0 && stale.length === 0;
 
-const thClass = 'px-4 py-2 font-medium';
-const tdClass = 'px-4 py-2 text-gray-600';
+const thClass = 'px-3 py-2 font-semibold';
+const tdClass = 'px-3 py-1.5 text-muted';
 ---
 
 <Layout title="Heute · b-leads">
-  <h1 class="text-xl font-semibold">Heute fällig</h1>
+  <h1 class="text-2xl font-semibold tracking-[-0.01em]">Heute fällig</h1>
 
   {
     nothingToDo ? (
-      <p class="mt-6 rounded border border-dashed border-gray-300 p-6 text-sm text-gray-600">
+      <p class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
         Nichts zu tun — alle Leads sind aktuell.
       </p>
     ) : (
       <div class="mt-6 space-y-10">
         {dueFollowUps.length > 0 && (
           <section>
-            <h2 class="font-medium text-gray-900">Wiedervorlage fällig ({dueFollowUps.length})</h2>
-            <div class="mt-3 overflow-x-auto rounded border border-gray-200 bg-white">
+            <h2 class="text-[1.125rem] font-semibold text-ink">
+              Wiedervorlage fällig <span class="font-mono text-base text-muted">({dueFollowUps.length})</span>
+            </h2>
+            <div class="mt-3 overflow-x-auto rounded-sm border border-border bg-surface">
               <table class="w-full text-left text-sm">
-                <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
                   <tr>
                     <th class={thClass}>Name</th>
                     <th class={thClass}>Firma</th>
@@ -83,24 +85,28 @@ const tdClass = 'px-4 py-2 text-gray-600';
                 <tbody>
                   {dueFollowUps.map((lead) => (
                     <tr
-                      class="cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                      class="cursor-pointer border-b border-border last:border-0 hover:bg-surface-sunken"
                       onclick={`location.href='/leads/${lead.id}'`}
                     >
-                      <td class="px-4 py-2 font-medium text-gray-900">{lead.name}</td>
+                      <td class="px-3 py-1.5 font-medium text-ink">{lead.name}</td>
                       <td class={tdClass}>{lead.company ?? '—'}</td>
-                      <td class="px-4 py-2">
-                        <span
-                          class={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[lead.status]}`}
-                        >
+                      <td class="px-3 py-1.5">
+                        <span class={`tag ${STATUS_CLASSES[lead.status]}`}>
                           {STATUS_LABELS[lead.status]}
                         </span>
                       </td>
-                      <td class={tdClass}>{formatDate(lead.followUpAt)}</td>
-                      <td class={tdClass}>{lead.followUpAt ? daysSince(lead.followUpAt) : 0}</td>
-                      <td class="px-4 py-2">
+                      <td class="px-3 py-1.5">
+                        <span class="data font-medium text-danger">{formatDate(lead.followUpAt)}</span>
+                      </td>
+                      <td class="px-3 py-1.5">
+                        <span class="data font-medium text-danger">
+                          {lead.followUpAt ? daysSince(lead.followUpAt) : 0}
+                        </span>
+                      </td>
+                      <td class="px-3 py-1.5">
                         <a
                           href={`/leads/${lead.id}`}
-                          class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                          class="text-sm font-medium text-accent-text hover:underline"
                         >
                           → zum Lead
                         </a>
@@ -115,10 +121,12 @@ const tdClass = 'px-4 py-2 text-gray-600';
 
         {stale.length > 0 && (
           <section>
-            <h2 class="font-medium text-gray-900">Stale Follow-ups (7+ Tage) ({stale.length})</h2>
-            <div class="mt-3 overflow-x-auto rounded border border-gray-200 bg-white">
+            <h2 class="text-[1.125rem] font-semibold text-ink">
+              Stale Follow-ups (7+ Tage) <span class="font-mono text-base text-muted">({stale.length})</span>
+            </h2>
+            <div class="mt-3 overflow-x-auto rounded-sm border border-border bg-surface">
               <table class="w-full text-left text-sm">
-                <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
                   <tr>
                     <th class={thClass}>Name</th>
                     <th class={thClass}>Firma</th>
@@ -130,21 +138,25 @@ const tdClass = 'px-4 py-2 text-gray-600';
                 <tbody>
                   {stale.map((lead) => (
                     <tr
-                      class="cursor-pointer border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                      class="cursor-pointer border-b border-border last:border-0 hover:bg-surface-sunken"
                       onclick={`location.href='/leads/${lead.id}'`}
                     >
-                      <td class="px-4 py-2 font-medium text-gray-900">{lead.name}</td>
+                      <td class="px-3 py-1.5 font-medium text-ink">{lead.name}</td>
                       <td class={tdClass}>{lead.company ?? '—'}</td>
-                      <td class={tdClass}>
-                        {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : 'nie'}
+                      <td class="px-3 py-1.5">
+                        <span class="data text-muted">
+                          {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : 'nie'}
+                        </span>
                       </td>
-                      <td class={tdClass}>
-                        {lead.lastTouchAt ? daysSince(lead.lastTouchAt) : '—'}
+                      <td class="px-3 py-1.5">
+                        <span class="data text-muted">
+                          {lead.lastTouchAt ? daysSince(lead.lastTouchAt) : '—'}
+                        </span>
                       </td>
-                      <td class="px-4 py-2">
+                      <td class="px-3 py-1.5">
                         <a
                           href={`/leads/${lead.id}`}
-                          class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                          class="text-sm font-medium text-accent-text hover:underline"
                         >
                           → zum Lead
                         </a>

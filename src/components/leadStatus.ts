@@ -10,13 +10,14 @@ export const STATUS_LABELS: Record<LeadStatus, string> = {
   lost: 'Verloren',
 };
 
-// Pill colors per spec. Keep these as complete literal strings so the Tailwind v4
-// JIT scanner picks them up (no dynamic concatenation).
+// Status-tag color modifier per status (pairs with the `.tag` base class, both
+// defined in global.css @layer components). Squared tags, not pills — they read
+// as data, not badges. Light/dark tints + tabular type live in the CSS tokens.
 export const STATUS_CLASSES: Record<LeadStatus, string> = {
-  new: 'bg-gray-100 text-gray-700',
-  contacted: 'bg-blue-100 text-blue-700',
-  replied: 'bg-violet-100 text-violet-700',
-  qualified: 'bg-amber-100 text-amber-700',
-  won: 'bg-green-100 text-green-700',
-  lost: 'bg-red-100 text-red-700',
+  new: 'tag-new',
+  contacted: 'tag-contacted',
+  replied: 'tag-replied',
+  qualified: 'tag-qualified',
+  won: 'tag-won',
+  lost: 'tag-lost',
 };
