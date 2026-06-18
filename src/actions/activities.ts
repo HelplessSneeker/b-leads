@@ -52,6 +52,41 @@ export function createActivity<S extends Record<string, unknown>>(
   return activity;
 }
 
+/** Fields accepted from the validated Zod form input (post-parse shape). */
+export interface UpdateActivityInput {
+  id: string;
+  type: ActivityType;
+  occurredAt: Date;
+  subject?: string;
+  body: string;
+}
+
+export function updateActivity<S extends Record<string, unknown>>(
+  db: ActivitiesDb<S>,
+  input: UpdateActivityInput,
+): Activity {
+  const existing = db.select().from(activities).where(eq(activities.id, input.id)).get();
+  if (!existing) throw new NotFoundError('Aktivität nicht gefunden');
+
+  const activity = db
+    .update(activities)
+    .set({
+      type: input.type,
+      subject: input.subject,
+      body: input.body,
+      occurredAt: input.occurredAt,
+    })
+    .where(eq(activities.id, input.id))
+    .returning()
+    .get();
+
+  // occurredAt may have moved in either direction — recompute lastTouchAt from all
+  // of the lead's activities rather than only bumping forward.
+  recomputeLastTouch(db, existing.leadId);
+
+  return activity;
+}
+
 export function deleteActivity<S extends Record<string, unknown>>(
   db: ActivitiesDb<S>,
   input: { id: string },
@@ -62,15 +97,23 @@ export function deleteActivity<S extends Record<string, unknown>>(
   db.delete(activities).where(eq(activities.id, input.id)).run();
 
   // Recompute lastTouchAt from the remaining activities (may become null).
+  recomputeLastTouch(db, existing.leadId);
+}
+
+/** Sets the lead's lastTouchAt to the newest of its activities (null if none remain). */
+function recomputeLastTouch<S extends Record<string, unknown>>(
+  db: ActivitiesDb<S>,
+  leadId: string,
+): void {
   const latest = db
     .select()
     .from(activities)
-    .where(eq(activities.leadId, existing.leadId))
+    .where(eq(activities.leadId, leadId))
     .orderBy(desc(activities.occurredAt))
     .get();
 
   db.update(leads)
     .set({ lastTouchAt: latest ? latest.occurredAt : null, updatedAt: new Date() })
-    .where(eq(leads.id, existing.leadId))
+    .where(eq(leads.id, leadId))
     .run();
 }

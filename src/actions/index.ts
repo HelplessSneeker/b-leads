@@ -5,6 +5,7 @@ import { ACTIVITY_TYPES, LEAD_STATUSES } from '~/db/schema';
 import {
   createActivity as createActivityCore,
   deleteActivity as deleteActivityCore,
+  updateActivity as updateActivityCore,
 } from './activities';
 import {
   ConflictError,
@@ -92,6 +93,26 @@ export const server = {
     handler: async (input) => {
       try {
         const activity = createActivityCore(db, input);
+        return { id: activity.id };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  updateActivity: defineAction({
+    accept: 'form',
+    input: z.object({
+      id: z.string().uuid(),
+      type: z.enum(ACTIVITY_TYPES),
+      // datetime-local sends an ISO-ish string; coerce it to a Date.
+      occurredAt: z.coerce.date(),
+      subject: z.string().optional(),
+      body: z.string().min(1, 'Inhalt ist erforderlich'),
+    }),
+    handler: async (input) => {
+      try {
+        const activity = updateActivityCore(db, input);
         return { id: activity.id };
       } catch (err) {
         return toActionError(err);

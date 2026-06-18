@@ -15,12 +15,14 @@ if (!id) return new Response('Not found', { status: 404 });
 const updateResult = Astro.getActionResult(actions.updateLead);
 const deleteResult = Astro.getActionResult(actions.deleteLead);
 const createActivityResult = Astro.getActionResult(actions.createActivity);
+const updateActivityResult = Astro.getActionResult(actions.updateActivity);
 const deleteActivityResult = Astro.getActionResult(actions.deleteActivity);
 
 // PRG: redirect after a successful mutation so a reload doesn't resubmit.
 if (deleteResult && !deleteResult.error) return Astro.redirect('/leads', 303);
 if (updateResult && !updateResult.error) return Astro.redirect(`/leads/${id}`, 303);
 if (createActivityResult && !createActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
+if (updateActivityResult && !updateActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
 if (deleteActivityResult && !deleteActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
 
 const lead = db.select().from(leads).where(eq(leads.id, id)).get();
@@ -56,6 +58,11 @@ const activityErrors =
   createActivityResult && isInputError(createActivityResult.error)
     ? createActivityResult.error.fields
     : undefined;
+const editActivityErrors =
+  updateActivityResult && isInputError(updateActivityResult.error)
+    ? updateActivityResult.error.fields
+    : undefined;
+const editingId = Astro.url.searchParams.get('edit');
 ---
 
 <Layout title={`${lead.name} · b-leads`}>
@@ -90,7 +97,12 @@ const activityErrors =
   <section class="mt-8 max-w-xl">
     <h2 class="font-medium text-gray-900">Aktivitäten ({leadActivities.length})</h2>
     <ActivityForm leadId={lead.id} fieldErrors={activityErrors} submitted={submitted} />
-    <ActivityTimeline activities={leadActivities} />
+    <ActivityTimeline
+      activities={leadActivities}
+      editingId={editingId}
+      fieldErrors={editActivityErrors}
+      submitted={submitted}
+    />
   </section>
 
   <section class="mt-8 max-w-xl border-t border-gray-200 pt-6">

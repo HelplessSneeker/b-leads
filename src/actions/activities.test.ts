@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { activities, leads } from '~/db/schema';
-import { createActivity, deleteActivity } from './activities';
+import { createActivity, deleteActivity, updateActivity } from './activities';
 import { createLead, deleteLead, NotFoundError } from './leads';
 
 function freshDb() {
@@ -110,6 +110,99 @@ describe('deleteActivity', () => {
     expect(() => deleteActivity(db, { id: '00000000-0000-0000-0000-000000000000' })).toThrow(
       NotFoundError,
     );
+  });
+});
+
+describe('updateActivity', () => {
+  let db: ReturnType<typeof freshDb>;
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('updates the activity fields', () => {
+    const lead = createLead(db, { name: 'A', email: 'a@example.com', source: 'test' });
+    const activity = createActivity(db, {
+      leadId: lead.id,
+      type: 'note',
+      occurredAt: new Date('2025-06-01T10:00:00Z'),
+      body: 'alt',
+    });
+
+    const updated = updateActivity(db, {
+      id: activity.id,
+      type: 'call',
+      occurredAt: new Date('2025-06-02T12:00:00Z'),
+      subject: 'Neuer Betreff',
+      body: 'neu',
+    });
+
+    expect(updated.type).toBe('call');
+    expect(updated.subject).toBe('Neuer Betreff');
+    expect(updated.body).toBe('neu');
+
+    const persisted = db.select().from(activities).where(eq(activities.id, activity.id)).get();
+    expect(persisted?.body).toBe('neu');
+  });
+
+  it('recomputes lastTouchAt when occurredAt moves forward (becomes newest)', () => {
+    const lead = createLead(db, { name: 'A', email: 'a@example.com', source: 'test' });
+    const older = createActivity(db, {
+      leadId: lead.id,
+      type: 'email_sent',
+      occurredAt: new Date('2025-05-01T10:00:00Z'),
+      body: 'erste Mail',
+    });
+    createActivity(db, {
+      leadId: lead.id,
+      type: 'email_received',
+      occurredAt: new Date('2025-06-01T10:00:00Z'),
+      body: 'Antwort',
+    });
+
+    // Push the older activity past the current newest.
+    const moved = new Date('2025-07-01T10:00:00Z');
+    updateActivity(db, { id: older.id, type: 'email_sent', occurredAt: moved, body: 'erste Mail' });
+
+    const refreshed = db.select().from(leads).where(eq(leads.id, lead.id)).get();
+    expect(refreshed?.lastTouchAt?.getTime()).toBe(moved.getTime());
+  });
+
+  it('recomputes lastTouchAt when occurredAt moves backward (another becomes newest)', () => {
+    const lead = createLead(db, { name: 'A', email: 'a@example.com', source: 'test' });
+    const older = createActivity(db, {
+      leadId: lead.id,
+      type: 'email_sent',
+      occurredAt: new Date('2025-05-01T10:00:00Z'),
+      body: 'erste Mail',
+    });
+    const newer = createActivity(db, {
+      leadId: lead.id,
+      type: 'email_received',
+      occurredAt: new Date('2025-06-01T10:00:00Z'),
+      body: 'Antwort',
+    });
+
+    // Pull the current newest back before the older one — the older becomes newest.
+    updateActivity(db, {
+      id: newer.id,
+      type: 'email_received',
+      occurredAt: new Date('2025-01-01T10:00:00Z'),
+      body: 'Antwort',
+    });
+
+    const refreshed = db.select().from(leads).where(eq(leads.id, lead.id)).get();
+    expect(refreshed?.lastTouchAt?.getTime()).toBe(older.occurredAt.getTime());
+  });
+
+  it('throws NotFoundError for an unknown id', () => {
+    expect(() =>
+      updateActivity(db, {
+        id: '00000000-0000-0000-0000-000000000000',
+        type: 'note',
+        occurredAt: new Date(),
+        body: 'x',
+      }),
+    ).toThrow(NotFoundError);
   });
 });
 

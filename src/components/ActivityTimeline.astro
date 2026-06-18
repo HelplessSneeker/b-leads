@@ -1,14 +1,33 @@
 ---
 import { actions } from 'astro:actions';
 import { ACTIVITY_TYPE_CLASSES, ACTIVITY_TYPE_LABELS } from '~/components/activityType';
-import type { Activity } from '~/db/schema';
+import { ACTIVITY_TYPES, type Activity } from '~/db/schema';
 import { formatDateTime } from '~/lib/date';
 
 interface Props {
   activities: Activity[];
+  editingId: string | null;
+  fieldErrors?: Record<string, string[] | undefined>;
+  submitted: FormData | null;
 }
 
-const { activities } = Astro.props;
+const { activities, editingId, fieldErrors, submitted } = Astro.props;
+
+// Repopulate the inline edit form from the failed submission, else the stored value.
+const value = (key: string, fallback: string) => {
+  const v = submitted?.get(key);
+  return typeof v === 'string' ? v : fallback;
+};
+
+// datetime-local needs a `yyyy-MM-ddTHH:mm` string in local time.
+const pad = (n: number) => String(n).padStart(2, '0');
+const toLocalInput = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+const fieldClass =
+  'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
+const labelClass = 'block text-sm font-medium text-gray-700';
+const errorClass = 'mt-1 text-sm text-red-600';
 ---
 
 {
@@ -18,38 +37,113 @@ const { activities } = Astro.props;
     </p>
   ) : (
     <ol class="mt-4 space-y-3">
-      {activities.map((activity) => (
-        <li class="rounded border border-gray-200 bg-white p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <span
-                class={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTIVITY_TYPE_CLASSES[activity.type]}`}
-              >
-                {ACTIVITY_TYPE_LABELS[activity.type]}
-              </span>
-              <span class="text-xs text-gray-500">{formatDateTime(activity.occurredAt)}</span>
-            </div>
-            <form
-              method="POST"
-              action={actions.deleteActivity}
-              onsubmit="return confirm('Aktivität wirklich löschen?')"
-            >
+      {activities.map((activity) =>
+        editingId === activity.id ? (
+          <li class="rounded border border-gray-300 bg-white p-4 ring-2 ring-gray-900">
+            <form method="POST" action={actions.updateActivity} class="space-y-3">
               <input type="hidden" name="id" value={activity.id} />
-              <button
-                type="submit"
-                class="text-xs font-medium text-red-600 hover:text-red-800"
-                aria-label="Aktivität löschen"
-              >
-                Löschen
-              </button>
+              <div class="flex flex-wrap gap-3">
+                <div class="flex-1">
+                  <label class={labelClass} for={`type-${activity.id}`}>
+                    Typ
+                  </label>
+                  <select id={`type-${activity.id}`} name="type" class={fieldClass}>
+                    {ACTIVITY_TYPES.map((t) => (
+                      <option value={t} selected={t === value('type', activity.type)}>
+                        {ACTIVITY_TYPE_LABELS[t]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div class="flex-1">
+                  <label class={labelClass} for={`occurredAt-${activity.id}`}>
+                    Zeitpunkt
+                  </label>
+                  <input
+                    id={`occurredAt-${activity.id}`}
+                    name="occurredAt"
+                    type="datetime-local"
+                    value={value('occurredAt', toLocalInput(activity.occurredAt))}
+                    class={fieldClass}
+                  />
+                </div>
+              </div>
+              <div>
+                <label class={labelClass} for={`subject-${activity.id}`}>
+                  Betreff (optional)
+                </label>
+                <input
+                  id={`subject-${activity.id}`}
+                  name="subject"
+                  type="text"
+                  value={value('subject', activity.subject ?? '')}
+                  class={fieldClass}
+                />
+              </div>
+              <div>
+                <label class={labelClass} for={`body-${activity.id}`}>
+                  Inhalt
+                </label>
+                <textarea id={`body-${activity.id}`} name="body" rows="3" class={fieldClass}>{value('body', activity.body)}</textarea>
+                {fieldErrors?.body && <p class={errorClass}>{fieldErrors.body[0]}</p>}
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="submit"
+                  class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+                >
+                  Speichern
+                </button>
+                <a
+                  href={`/leads/${activity.leadId}`}
+                  class="text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Abbrechen
+                </a>
+              </div>
             </form>
-          </div>
-          {activity.subject && (
-            <p class="mt-2 text-sm font-medium text-gray-900">{activity.subject}</p>
-          )}
-          <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">{activity.body}</p>
-        </li>
-      ))}
+          </li>
+        ) : (
+          <li class="rounded border border-gray-200 bg-white p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <span
+                  class={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTIVITY_TYPE_CLASSES[activity.type]}`}
+                >
+                  {ACTIVITY_TYPE_LABELS[activity.type]}
+                </span>
+                <span class="text-xs text-gray-500">{formatDateTime(activity.occurredAt)}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <a
+                  href={`/leads/${activity.leadId}?edit=${activity.id}`}
+                  class="text-xs font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Bearbeiten
+                </a>
+                <form
+                  method="POST"
+                  action={actions.deleteActivity}
+                  onsubmit="return confirm('Aktivität wirklich löschen?')"
+                >
+                  <input type="hidden" name="id" value={activity.id} />
+                  <button
+                    type="submit"
+                    class="text-xs font-medium text-red-600 hover:text-red-800"
+                    aria-label="Aktivität löschen"
+                  >
+                    Löschen
+                  </button>
+                </form>
+              </div>
+            </div>
+            {activity.subject && (
+              <p class="mt-2 text-sm font-medium text-gray-900">{activity.subject}</p>
+            )}
+            <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700">{activity.body}</p>
+          </li>
+        ),
+      )}
     </ol>
   )
 }
