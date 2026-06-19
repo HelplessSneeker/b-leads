@@ -100,7 +100,8 @@ function statusToggleHref(status: LeadStatus): string {
 ---
 
 <Layout title="Leads · b-leads">
-  <div class="flex items-center justify-between">
+  <div class="flex h-full flex-col">
+  <div class="flex shrink-0 items-center justify-between">
     <h1 class="text-2xl font-semibold tracking-[-0.01em]">Leads</h1>
     <div class="flex items-center gap-2">
       <a href="/leads/import" class="btn btn-secondary">CSV-Import</a>
@@ -108,7 +109,7 @@ function statusToggleHref(status: LeadStatus): string {
     </div>
   </div>
 
-  <div class="mt-6 flex gap-2 overflow-x-auto scrollbar-none pb-1">
+  <div class="mt-6 -mx-1 flex shrink-0 gap-2 overflow-x-auto scrollbar-none px-1 py-1">
     {
       LEAD_STATUSES.map((s) => {
         const isActive = selectedStatuses.includes(s);
@@ -134,13 +135,13 @@ function statusToggleHref(status: LeadStatus): string {
     }
   </div>
 
-  <div class="mt-6">
+  <div class="mt-6 shrink-0">
     <LeadsFilter client:load selected={selectedStatuses} query={q} />
   </div>
 
   {
     rows.length === 0 ? (
-      <div class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
+      <div class="mt-6 shrink-0 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
         {q || selectedStatuses.length ? (
           <p>
             Keine Leads für diesen Filter.{' '}
@@ -163,9 +164,9 @@ function statusToggleHref(status: LeadStatus): string {
         )}
       </div>
     ) : (
-      <div class="mt-6 overflow-x-auto scrollbar-none rounded-sm border border-border bg-surface">
+      <div class="mt-6 min-h-0 flex-1 overflow-auto scrollbar-none rounded-sm border border-border bg-surface">
         <table class="w-full text-left text-sm">
-          <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
+          <thead class="sticky top-0 z-10 bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted shadow-[inset_0_-1px_0_var(--color-border)]">
             <tr>
               {/* Priority columns (Name · Status · Wiedervorlage) stay at every
                   width; lower-priority ones reveal as the viewport grows. The full
@@ -242,6 +243,7 @@ function statusToggleHref(status: LeadStatus): string {
       </div>
     )
   }
+  </div>
 
   {
     showStatusToast && (
