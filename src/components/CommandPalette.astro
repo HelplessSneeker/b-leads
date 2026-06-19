@@ -138,8 +138,14 @@ const shortcuts: { keys: string[]; label: string }[] = [
        list stable as it shrinks while filtering. */
     position: fixed;
     inset: 0;
+    /* The native <dialog> UA stylesheet sets width/height: fit-content, so
+       inset:0 alone leaves the box content-sized and pinned to the left edge.
+       Reset to auto so the inset offsets stretch it across the viewport — only
+       then does place-content actually center the panel. */
+    width: auto;
+    height: auto;
     display: grid;
-    place-items: start center;
+    place-content: start center;
     padding-top: 12vh;
   }
 
