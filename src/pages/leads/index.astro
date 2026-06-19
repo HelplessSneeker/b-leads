@@ -125,7 +125,7 @@ function statusToggleHref(status: LeadStatus): string {
             ]}
           >
             <span class={`tag self-start ${STATUS_CLASSES[s]}`}>{STATUS_LABELS[s]}</span>
-            <span class="font-mono text-xl font-medium tabular-nums text-ink">
+            <span class="text-xl font-medium tabular-nums text-ink">
               {countByStatus.get(s) ?? 0}
             </span>
           </a>

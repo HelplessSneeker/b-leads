@@ -22,40 +22,40 @@ colors:
   status-lost: "oklch(0.50 0.18 25)"
 typography:
   page-title:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.01em"
   section:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 600
     lineHeight: 1.3
     letterSpacing: "normal"
   title:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 600
     lineHeight: 1.35
     letterSpacing: "normal"
   body:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "normal"
   label:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "0.6875rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "0.05em"
   data:
-    fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "0.8125rem"
-    fontWeight: 450
-    lineHeight: 1.4
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.5
     letterSpacing: "normal"
     fontFeature: "\"tnum\" 1"
 rounded:
@@ -119,10 +119,11 @@ whole system optimizes for one thing: **the operator reads dense information and
 acts fast.** Density is the point, not a compromise. Chrome that does not speed the
 scan is deleted.
 
-The visual language is a quiet technical console: a flat, layered neutral surface;
-proportional sans for labels and prose; and a **monospace data layer** that carries
-everything scanned and compared down a column — dates, counts, emails, IDs,
-follow-up dates. Color is rationed. The indigo accent appears only on interaction
+The visual language is a quiet technical console: a flat, layered neutral surface
+and a **single humanist sans** (Inter) across the whole system, with **tabular
+numerals** carrying everything scanned and compared down a column — dates, counts,
+emails, IDs, follow-up dates — so figures align to the pixel without a separate
+monospace family. Color is rationed. The indigo accent appears only on interaction
 (primary action, current selection, focus, links); the six semantic status hues
 appear only on pipeline state. Nothing is colored for decoration. The system is
 **system-adaptive**: a dark console for focused and evening sessions, a pure-white
@@ -138,7 +139,7 @@ illustrations, no bounce).
 
 **Key Characteristics:**
 - Flat, tonally-layered neutral surface; depth by border and tone, not shadow.
-- Monospace tabular numerals for all scanned/compared data.
+- One humanist sans (Inter) system-wide; tabular numerals for all scanned/compared data.
 - A single rationed indigo accent for interaction; six semantic hues for state.
 - Tight density: 14px body, ~28px table rows, small squared status tags.
 - Dual-mode (dark + light), adapting to ambient light.
@@ -212,16 +213,23 @@ forbidden.
 
 ## 3. Typography
 
-**UI / Body Font:** IBM Plex Sans (fallback `system-ui, sans-serif`)
-**Data / Mono Font:** IBM Plex Mono (fallback `ui-monospace, SFMono-Regular, Menlo, monospace`)
+**UI / Body Font:** Inter (fallback `system-ui, sans-serif`)
 
-**Character:** One designed-together superfamily, paired on the proportional-vs-mono
-contrast axis. Plex Sans is a precise, slightly technical grotesque — right for an
-instrument, never corporate, never toy. Plex Mono is the console's voice: it carries
-every value the operator scans and compares down a column, with tabular numerals so
-digits align to the pixel. The mono *is* the signature of the system.
+One humanist sans across the entire system. There is no separate data/mono family:
+columns of figures align via tabular numerals, not a monospace face. (System mono —
+`ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` — survives in exactly one
+place: inline `code` spans inside rendered Markdown notes, the universal convention
+for code snippets.)
+
+**Character:** Inter is a highly legible humanist sans, optimized for UI scales and
+small sizes — neutral enough to disappear into the task, precise enough to read as an
+instrument rather than a marketing page. Crucially it ships true **tabular numerals**
+as an OpenType feature (`font-variant-numeric: tabular-nums`), so every digit occupies
+the same advance width and data columns align to the pixel — the alignment the old
+monospace layer gave us, now warmer and more readable, with no second typeface.
 
 ### Hierarchy
+All six steps are set in Inter; only weight, size, and the numeric feature vary.
 - **Page Title** (600, 1.5rem/24px, -0.01em): Page headers (`Leads`, `Heute`). The
   ceiling — this console does not shout. One per page.
 - **Section** (600, 1.125rem/18px): Sub-section headers, dialog titles.
@@ -230,15 +238,17 @@ digits align to the pixel. The mono *is* the signature of the system.
   capped at 65–75ch; dense tables run wider.
 - **Label** (600, 0.6875rem/11px, +0.05em, UPPERCASE): Table column headers and
   field labels only. The one place tracking-uppercase is allowed.
-- **Data** (450, 0.8125rem/13px, `font-feature-settings: "tnum"`): IBM Plex Mono.
+- **Data** (400, 0.875rem/14px, `font-variant-numeric: tabular-nums`): Same Inter
+  family, size, and weight as Body — only the numeric figures are switched to tabular.
   Dates, times, counts, emails, IDs, follow-up dates — anything aligned in a column
   or compared between rows.
 
 ### Named Rules
-**The Mono-for-Data Rule.** If a value is scanned down a column or compared between
-rows (date, count, email, ID, currency), it is set in IBM Plex Mono with tabular
-numerals. Prose and labels are Plex Sans. Mixing them — sans dates in a table, mono
-prose — is forbidden.
+**The Tabular-Nums-for-Data Rule.** If a value is scanned down a column or compared
+between rows (date, count, email, ID, currency), it gets
+`font-variant-numeric: tabular-nums`. The sans stays Inter; only the digit box is
+made fixed-width, so figures align without a monospace face. Mono remains available
+as a convention for code spans in Markdown notes — and nowhere else.
 
 **The Fixed-Scale Rule.** Type sizes are fixed rem, never fluid `clamp()`. The
 operator views at a consistent DPI; a heading that shrinks in a panel reads worse,
@@ -271,7 +281,7 @@ Every interactive component ships all of: default, hover, focus-visible, active,
 disabled. Half a component is not shipped.
 
 ### Buttons
-- **Shape:** Lightly squared (3px radius). Compact padding (6px 12px). Plex Sans 600,
+- **Shape:** Lightly squared (3px radius). Compact padding (6px 12px). Inter 600,
   15px.
 - **Primary:** Filled Console Indigo, white text (white text holds on the saturated
   fill in both modes). Used for the one main action per view (`Neuer Lead`). Hover:
@@ -292,7 +302,7 @@ squared *tag* reads as data, not as a marketing badge.
   text.
 - **Dark:** ~10%-opacity tint of the status hue as background + the bright status hue
   as text (10% keeps the 11px text at WCAG AA ≥4.5:1).
-- **As a filter (the status stat row):** the same tag plus a mono count. Selected
+- **As a filter (the status stat row):** the same tag plus a tabular-nums count. Selected
   state = a 2px accent ring (Two Vocabularies Rule: selection is indigo, the tag's
   own hue stays its status color).
 
@@ -311,11 +321,11 @@ The lead list is the heart of the console. It is a real table, dense and scannab
   border.
 - **Body rows:** ~28px tall (6px 12px cells), 1px divider between rows, last row
   borderless. Hover: surface-sunken. Name in Title type + accent-text on hover; all
-  data columns (email, dates, counts) in Data (mono) type.
+  data columns (email, dates, counts) in Data type (Inter with tabular numerals).
 - **No zebra striping** — the hairline divider does the separation; stripes add noise.
 
 ### Follow-up Cell (signature)
-The single most important at-a-glance signal. A mono date colored by urgency:
+The single most important at-a-glance signal. A tabular-nums date colored by urgency:
 overdue = *lost red* + 600, due-today = *qualified amber* + 600, future = muted, none
 = muted em-dash. Color is always backed by weight so urgency survives a colorblind
 read.
@@ -334,7 +344,7 @@ is secondary or ghost. Two primaries means neither is.
 
 ### Do:
 - **Do** set every scanned/compared value (dates, counts, emails, IDs, follow-ups) in
-  IBM Plex Mono with tabular numerals (`font-feature-settings: "tnum"`).
+  Inter with tabular numerals (`font-variant-numeric: tabular-nums`).
 - **Do** keep Console Indigo for interaction only — primary action, selection, focus,
   active nav, links — at ≤10% of any screen.
 - **Do** convey depth with tone (bg → surface → surface-sunken) and 1px borders;
@@ -363,7 +373,8 @@ is secondary or ghost. Two primaries means neither is.
 - **Don't** use `border-left`/`border-right` > 1px as a colored accent stripe; use a
   full border, a tint, or a leading status tag instead.
 - **Don't** use gradient text, `background-clip: text`, or decorative glassmorphism.
-- **Don't** set data in proportional sans or prose in mono; don't use fluid `clamp()`
-  type sizes in this product UI.
+- **Don't** drop tabular numerals on scanned/compared columns (they keep figures
+  aligned now that there's no monospace data layer); don't use mono for anything but
+  Markdown code spans; don't use fluid `clamp()` type sizes in this product UI.
 - **Don't** revert to undifferentiated default-Tailwind gray (`bg-gray-50` /
   `text-gray-900` with no tokens) — that is the rejected starting point.
