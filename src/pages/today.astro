@@ -85,7 +85,7 @@ const tdClass = 'px-3 py-1.5 text-muted';
                 <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
                   <tr>
                     <th class={thClass}>Name</th>
-                    <th class={thClass}>Firma</th>
+                    <th class:list={[thClass, 'hidden md:table-cell']}>Firma</th>
                     <th class={thClass}>Status</th>
                     <th class={thClass}>Wiedervorlage</th>
                     <th class={thClass}>Tage überfällig</th>
@@ -111,7 +111,7 @@ const tdClass = 'px-3 py-1.5 text-muted';
                             {lead.name}
                           </a>
                         </td>
-                        <td class={tdClass}>
+                        <td class:list={[tdClass, 'hidden md:table-cell']}>
                           <span class="block max-w-[16ch] truncate" title={lead.company ?? undefined}>
                             {lead.company ?? '—'}
                           </span>
@@ -150,7 +150,7 @@ const tdClass = 'px-3 py-1.5 text-muted';
                 <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
                   <tr>
                     <th class={thClass}>Name</th>
-                    <th class={thClass}>Firma</th>
+                    <th class:list={[thClass, 'hidden md:table-cell']}>Firma</th>
                     <th class={thClass}>Letzter Kontakt</th>
                     <th class={thClass}>Tage seit Kontakt</th>
                   </tr>
@@ -171,7 +171,7 @@ const tdClass = 'px-3 py-1.5 text-muted';
                           {lead.name}
                         </a>
                       </td>
-                      <td class={tdClass}>
+                      <td class:list={[tdClass, 'hidden md:table-cell']}>
                         <span class="block max-w-[16ch] truncate" title={lead.company ?? undefined}>
                           {lead.company ?? '—'}
                         </span>

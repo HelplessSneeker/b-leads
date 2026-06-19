@@ -167,13 +167,16 @@ function statusToggleHref(status: LeadStatus): string {
         <table class="w-full text-left text-sm">
           <thead class="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
             <tr>
+              {/* Priority columns (Name · Status · Wiedervorlage) stay at every
+                  width; lower-priority ones reveal as the viewport grows. The full
+                  record is always one tap away on the lead's detail page. */}
               <th class="px-3 py-2 font-semibold">Name</th>
-              <th class="px-3 py-2 font-semibold">Firma</th>
-              <th class="px-3 py-2 font-semibold">E-Mail</th>
+              <th class="hidden px-3 py-2 font-semibold md:table-cell">Firma</th>
+              <th class="hidden px-3 py-2 font-semibold lg:table-cell">E-Mail</th>
               <th class="px-3 py-2 font-semibold">Status</th>
-              <th class="px-3 py-2 font-semibold">Letzter Kontakt</th>
+              <th class="hidden px-3 py-2 font-semibold sm:table-cell">Letzter Kontakt</th>
               <th class="px-3 py-2 font-semibold">Wiedervorlage</th>
-              <th class="px-3 py-2 font-semibold">Nächste Aktion</th>
+              <th class="hidden px-3 py-2 font-semibold lg:table-cell">Nächste Aktion</th>
             </tr>
           </thead>
           <tbody data-nav-list>
@@ -182,6 +185,9 @@ function statusToggleHref(status: LeadStatus): string {
                 class="group border-b border-border last:border-0 hover:bg-surface-sunken"
                 data-nav-row
                 data-href={`/leads/${lead.id}`}
+                data-lead-id={lead.id}
+                data-status={lead.status}
+                data-name={lead.name}
                 data-flash={lead.id === changedId ? '' : undefined}
               >
                 <td class="px-3 py-1.5">
@@ -193,36 +199,28 @@ function statusToggleHref(status: LeadStatus): string {
                     {lead.name}
                   </a>
                 </td>
-                <td class="px-3 py-1.5">
+                <td class="hidden px-3 py-1.5 md:table-cell">
                   <span class="block max-w-[14ch] truncate text-muted" title={lead.company ?? undefined}>
                     {lead.company ?? '—'}
                   </span>
                 </td>
-                <td class="px-3 py-1.5">
+                <td class="hidden px-3 py-1.5 lg:table-cell">
                   <span class="data block max-w-[22ch] truncate text-ink" title={lead.email}>
                     {lead.email}
                   </span>
                 </td>
                 <td class="px-3 py-1.5">
-                  <form method="POST" action={actions.updateLeadStatus}>
-                    <input type="hidden" name="id" value={lead.id} />
-                    <input type="hidden" name="returnTo" value={returnTo} />
-                    <select
-                      name="status"
-                      onchange="this.form.requestSubmit()"
-                      onwheel="event.preventDefault()"
-                      aria-label="Status ändern"
-                      class="rounded-sm border border-border bg-bg px-2 py-1 text-xs text-ink transition-colors focus:border-accent"
-                    >
-                      {LEAD_STATUSES.map((s) => (
-                        <option value={s} selected={s === lead.status}>
-                          {STATUS_LABELS[s]}
-                        </option>
-                      ))}
-                    </select>
-                  </form>
+                  <button
+                    type="button"
+                    data-status-trigger
+                    aria-haspopup="dialog"
+                    aria-label={`Status ändern: ${lead.name} — aktuell ${STATUS_LABELS[lead.status]}`}
+                    class:list={['tag tag-trigger', STATUS_CLASSES[lead.status]]}
+                  >
+                    {STATUS_LABELS[lead.status]}
+                  </button>
                 </td>
-                <td class="px-3 py-1.5">
+                <td class="hidden px-3 py-1.5 sm:table-cell">
                   <span class="data text-muted">
                     {lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}
                   </span>
@@ -232,7 +230,7 @@ function statusToggleHref(status: LeadStatus): string {
                     {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
                   </span>
                 </td>
-                <td class="px-3 py-1.5">
+                <td class="hidden px-3 py-1.5 lg:table-cell">
                   <span class="block max-w-[24ch] truncate text-muted" title={lead.nextAction ?? undefined}>
                     {lead.nextAction ?? '—'}
                   </span>
@@ -287,10 +285,16 @@ function statusToggleHref(status: LeadStatus): string {
 </Layout>
 
 <script>
-  // One-shot status toast: strip the changed/from/to params so a reload won't
-  // replay the toast, and auto-dismiss after a few seconds.
-  const toast = document.getElementById('status-toast');
-  if (toast) {
+  // One-shot status toast. Runs on every astro:page-load (not just the first):
+  // hoisted module scripts execute once per session, so the ClientRouter event is
+  // what re-wires the freshly-rendered toast after each status-change navigation.
+  // The toast persists until dismissed (the status change is now confirmable, so
+  // the undo is for intentional regret — no countdown racing the operator). It's
+  // replaced by the next change's render, so it never piles up.
+  function initStatusToast() {
+    const toast = document.getElementById('status-toast');
+    if (!toast) return;
+    // Strip the changed/from/to params so a manual reload won't replay the toast.
     const url = new URL(window.location.href);
     let dirty = false;
     for (const k of ['changed', 'from', 'to']) {
@@ -301,12 +305,7 @@ function statusToggleHref(status: LeadStatus): string {
     }
     if (dirty) history.replaceState(null, '', url.pathname + url.search);
     const hide = () => toast.setAttribute('hidden', '');
-    const timer = setTimeout(hide, 6000);
-    toast
-      .querySelector('[data-dismiss]')
-      ?.addEventListener('click', () => {
-        clearTimeout(timer);
-        hide();
-      });
+    toast.querySelector('[data-dismiss]')?.addEventListener('click', hide);
   }
+  document.addEventListener('astro:page-load', initStatusToast);
 </script>
