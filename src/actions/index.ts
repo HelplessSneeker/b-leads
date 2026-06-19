@@ -1,7 +1,8 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
+import { eq } from 'drizzle-orm';
 import { db } from '~/db';
-import { ACTIVITY_TYPES, LEAD_STATUSES } from '~/db/schema';
+import { ACTIVITY_TYPES, LEAD_STATUSES, leads } from '~/db/schema';
 import {
   createActivity as createActivityCore,
   deleteActivity as deleteActivityCore,
@@ -93,9 +94,22 @@ export const server = {
     }),
     handler: async ({ id, status, returnTo }) => {
       try {
+        // Capture the prior status so the list can show a confirmation toast with
+        // an undo path. (Core stays untouched/return-stable for its unit tests.)
+        const before = db
+          .select({ status: leads.status })
+          .from(leads)
+          .where(eq(leads.id, id))
+          .get();
         updateLeadStatusCore(db, { id, status });
         // Only allow same-app paths back to the list; fall back to /leads.
         const safeReturnTo = returnTo?.startsWith('/leads') ? returnTo : '/leads';
+        // Signal the one-shot toast + row flash, only when the status actually moved.
+        if (before && before.status !== status) {
+          const sep = safeReturnTo.includes('?') ? '&' : '?';
+          const toast = new URLSearchParams({ changed: id, from: before.status, to: status });
+          return { returnTo: `${safeReturnTo}${sep}${toast.toString()}` };
+        }
         return { returnTo: safeReturnTo };
       } catch (err) {
         return toActionError(err);

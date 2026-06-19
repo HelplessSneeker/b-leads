@@ -335,6 +335,27 @@
     font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
   }
+
+  /* Keyboard row selection (j/k over a [data-nav-list]). The indigo inset is an
+     interaction signal — the currently-selected row — not pipeline state. */
+  tr[data-nav-active] {
+    background: var(--surface-sunken);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  /* Status-change confirmation: the just-updated row flashes once, so the inline
+     status edit is acknowledged without a layout shift. Interaction feedback. */
+  @keyframes row-flash {
+    from {
+      background: color-mix(in oklch, var(--accent) 18%, transparent);
+    }
+    to {
+      background: transparent;
+    }
+  }
+  tr[data-flash] {
+    animation: row-flash 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 /* Rendered Markdown for lead notes — on tokens, dark-aware. */

@@ -35,6 +35,7 @@ export default function LeadsFilter({ selected, query }: LeadsFilterProps) {
   return (
     <input
       type="search"
+      data-search
       value={q}
       onChange={(e) => onQueryChange(e.target.value)}
       onKeyDown={(e) => {

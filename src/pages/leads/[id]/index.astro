@@ -69,7 +69,7 @@ function followUpClass(value: Date | null): string {
 <Layout title={`${lead.name} · b-leads`}>
   <nav class="text-sm text-muted">
     <a href="/leads" class="hover:text-ink">Leads</a>
-    <span class="px-1 text-border">/</span>
+    <span class="px-1 text-muted">/</span>
     <span class="text-ink">{lead.name}</span>
   </nav>
 
@@ -110,7 +110,7 @@ function followUpClass(value: Date | null): string {
         <dd class="mt-0.5 text-ink">{lead.source}</dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Next Action</dt>
+        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Nächste Aktion</dt>
         <dd class="mt-0.5 text-ink">{lead.nextAction ?? '—'}</dd>
       </div>
       <div class="min-w-0">
@@ -120,7 +120,7 @@ function followUpClass(value: Date | null): string {
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Last Touch</dt>
+        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Letzter Kontakt</dt>
         <dd class="mt-0.5 data text-ink">{lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}</dd>
       </div>
       <div class="min-w-0">

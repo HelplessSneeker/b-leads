@@ -1,0 +1,554 @@
+---
+import { STATUS_LABELS } from '~/components/leadStatus';
+import { LEAD_STATUSES } from '~/db/schema';
+
+// Keyboard layer for the console (PRODUCT.md: "keyboard-forward"). Rendered once
+// in Layout. Three pieces:
+//   1. A command palette (⌘K / Ctrl+K, or `:`) — fuzzy-filter + run any command.
+//   2. Global shortcuts: g t / g l navigate, n new, i import, / focus search,
+//      ? help, j/k/Enter row navigation on any [data-nav-list] table.
+//   3. A help sheet (?) listing every binding.
+// Everything is progressive: the commands are real <a>/<button> elements, so the
+// palette works without the enhancer too; the script only adds filter + keys.
+
+type Command =
+  | { id: string; label: string; hint: string; keys?: string; href: string }
+  | { id: string; label: string; hint: string; keys?: string; action: 'search' | 'help' };
+
+const commands: Command[] = [
+  { id: 'today', label: 'Heute', hint: 'Fällige & stille Leads', keys: 'g t', href: '/today' },
+  { id: 'leads', label: 'Leads', hint: 'Alle Leads', keys: 'g l', href: '/leads' },
+  { id: 'new', label: 'Neuer Lead', hint: 'Lead anlegen', keys: 'n', href: '/leads/new' },
+  {
+    id: 'import',
+    label: 'CSV-Import',
+    hint: 'Leads importieren',
+    keys: 'i',
+    href: '/leads/import',
+  },
+  {
+    id: 'search',
+    label: 'Suche fokussieren',
+    hint: 'In der Liste suchen',
+    keys: '/',
+    action: 'search',
+  },
+  ...LEAD_STATUSES.map((s) => ({
+    id: `status-${s}`,
+    label: `Filter: ${STATUS_LABELS[s]}`,
+    hint: 'Leads nach Status',
+    href: `/leads?status=${s}`,
+  })),
+  { id: 'help', label: 'Tastaturkürzel', hint: 'Alle Kürzel anzeigen', keys: '?', action: 'help' },
+];
+
+const shortcuts: { keys: string[]; label: string }[] = [
+  { keys: ['⌘', 'K'], label: 'Befehlspalette öffnen' },
+  { keys: ['/'], label: 'Suche fokussieren' },
+  { keys: ['g', 't'], label: 'Zu Heute' },
+  { keys: ['g', 'l'], label: 'Zu Leads' },
+  { keys: ['n'], label: 'Neuer Lead' },
+  { keys: ['i'], label: 'CSV-Import' },
+  { keys: ['j'], label: 'Zeile abwärts' },
+  { keys: ['k'], label: 'Zeile aufwärts' },
+  { keys: ['↵'], label: 'Ausgewählte Zeile öffnen' },
+  { keys: ['?'], label: 'Diese Hilfe' },
+  { keys: ['Esc'], label: 'Schließen' },
+];
+---
+
+<dialog id="cmdk" class="cmdk" aria-label="Befehlspalette">
+  <div class="cmdk-panel">
+    <input
+      id="cmdk-input"
+      type="text"
+      class="cmdk-input"
+      placeholder="Befehl oder Sprung…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-controls="cmdk-list"
+      aria-expanded="true"
+    />
+    <ul id="cmdk-list" class="cmdk-list" role="listbox" aria-label="Befehle">
+      {
+        commands.map((cmd) => (
+          <li role="option" class="cmdk-item" data-cmd-id={cmd.id} data-label={cmd.label}>
+            <a
+              class="cmdk-link"
+              href={'href' in cmd ? cmd.href : '#'}
+              data-action={'action' in cmd ? cmd.action : undefined}
+            >
+              <span class="cmdk-item-label">{cmd.label}</span>
+              <span class="cmdk-item-hint">{cmd.hint}</span>
+              {cmd.keys && <kbd class="cmdk-item-keys">{cmd.keys}</kbd>}
+            </a>
+          </li>
+        ))
+      }
+      <li id="cmdk-empty" class="cmdk-empty" hidden>Kein Treffer.</li>
+    </ul>
+    <footer class="cmdk-footer">
+      <span><kbd>↑</kbd><kbd>↓</kbd> navigieren</span>
+      <span><kbd>↵</kbd> ausführen</span>
+      <span><kbd>esc</kbd> schließen</span>
+    </footer>
+  </div>
+</dialog>
+
+<dialog id="kbd-help" class="cmdk" aria-label="Tastaturkürzel">
+  <div class="cmdk-panel cmdk-panel--help">
+    <h2 class="kbd-help-title">Tastaturkürzel</h2>
+    <ul class="kbd-help-list">
+      {
+        shortcuts.map((s) => (
+          <li class="kbd-help-row">
+            <span class="kbd-help-keys">
+              {s.keys.map((k) => (
+                <kbd>{k}</kbd>
+              ))}
+            </span>
+            <span class="kbd-help-label">{s.label}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <footer class="cmdk-footer">
+      <span><kbd>esc</kbd> schließen</span>
+    </footer>
+  </div>
+</dialog>
+
+<style>
+  /* Native <dialog> escapes every stacking/overflow context (skill guidance:
+     don't trap an overlay inside an overflow:auto container). */
+  .cmdk {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    max-width: 100vw;
+    max-height: 100vh;
+  }
+  .cmdk::backdrop {
+    background: oklch(0 0 0 / 0.4);
+    backdrop-filter: blur(2px);
+  }
+  .cmdk[open] {
+    /* Anchor the panel toward the top — command-bar convention, and it keeps the
+       list stable as it shrinks while filtering. */
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: start center;
+    padding-top: 12vh;
+  }
+
+  .cmdk-panel {
+    width: min(34rem, calc(100vw - 2rem));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--overlay-shadow);
+    overflow: hidden;
+  }
+
+  .cmdk-input {
+    width: 100%;
+    background: transparent;
+    color: var(--ink);
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+  .cmdk-input::placeholder {
+    color: var(--muted);
+  }
+  .cmdk-input:focus {
+    outline: none;
+  }
+
+  .cmdk-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    max-height: min(24rem, 60vh);
+    overflow-y: auto;
+  }
+
+  .cmdk-link {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  /* Roving highlight follows keyboard selection and hover; the indigo accent is an
+     interaction signal here (selection), consistent with the Two Vocabularies rule. */
+  .cmdk-item[data-active] .cmdk-link {
+    background: var(--surface-sunken);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .cmdk-item[hidden] {
+    display: none;
+  }
+
+  .cmdk-item-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .cmdk-item-hint {
+    flex: 1;
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+  .cmdk-item-keys,
+  .cmdk-footer kbd,
+  .kbd-help-keys kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  .cmdk-empty {
+    padding: 14px 12px;
+    color: var(--muted);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  .cmdk-footer {
+    display: flex;
+    gap: 14px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-sunken);
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+  .cmdk-footer span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Help sheet */
+  .cmdk-panel--help {
+    padding: 16px 18px 0;
+  }
+  .kbd-help-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .kbd-help-list {
+    list-style: none;
+    margin: 12px 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .kbd-help-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.875rem;
+  }
+  .kbd-help-keys {
+    display: inline-flex;
+    gap: 4px;
+    min-width: 4.5rem;
+  }
+  .kbd-help-label {
+    color: var(--ink);
+  }
+  .cmdk-panel--help .cmdk-footer {
+    margin: 0 -18px;
+  }
+
+  /* Entrance: brief fade + lift. ~75% exit handled by the [open] gate. */
+  @keyframes cmdk-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .cmdk[open] .cmdk-panel {
+    animation: cmdk-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes cmdk-backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .cmdk[open]::backdrop {
+    animation: cmdk-backdrop-in 160ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cmdk[open] .cmdk-panel,
+    .cmdk[open]::backdrop {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  type Dialog = HTMLDialogElement;
+
+  const palette = document.getElementById('cmdk') as Dialog | null;
+  const help = document.getElementById('kbd-help') as Dialog | null;
+  const input = document.getElementById('cmdk-input') as HTMLInputElement | null;
+  const list = document.getElementById('cmdk-list');
+  const emptyEl = document.getElementById('cmdk-empty');
+  if (!palette || !help || !input || !list || !emptyEl) {
+    // Nothing to wire if the markup is absent; bail quietly.
+  } else {
+    const items = Array.from(list.querySelectorAll<HTMLLIElement>('.cmdk-item'));
+    let activeIndex = 0;
+
+    const isTypingContext = (el: EventTarget | null): boolean => {
+      const node = el as HTMLElement | null;
+      if (!node) return false;
+      const tag = node.tagName;
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        node.isContentEditable === true
+      );
+    };
+
+    const visibleItems = () => items.filter((i) => !i.hidden);
+
+    const setActive = (idx: number) => {
+      const vis = visibleItems();
+      if (vis.length === 0) return;
+      const clamped = (idx + vis.length) % vis.length;
+      for (const it of items) delete it.dataset.active;
+      const el = vis[clamped];
+      el.dataset.active = '';
+      activeIndex = items.indexOf(el);
+      el.scrollIntoView({ block: 'nearest' });
+    };
+
+    const filter = (query: string) => {
+      const q = query.trim().toLowerCase();
+      let anyVisible = false;
+      for (const it of items) {
+        const label = (it.dataset.label ?? '').toLowerCase();
+        // Subsequence match so "nl" finds "Neuer Lead".
+        const match = q === '' || subsequence(q, label) || label.includes(q);
+        it.hidden = !match;
+        if (match) anyVisible = true;
+      }
+      emptyEl.hidden = anyVisible;
+      const first = visibleItems()[0];
+      if (first) setActive(items.indexOf(first));
+    };
+
+    const subsequence = (needle: string, hay: string): boolean => {
+      let i = 0;
+      for (const ch of hay) if (ch === needle[i]) i++;
+      return i === needle.length;
+    };
+
+    const openPalette = () => {
+      if (palette.open || help.open) return;
+      input.value = '';
+      filter('');
+      palette.showModal();
+      input.focus();
+    };
+
+    const runActive = () => {
+      const el = items[activeIndex];
+      if (!el || el.hidden) return;
+      const link = el.querySelector<HTMLAnchorElement>('.cmdk-link');
+      if (!link) return;
+      const action = link.dataset.action;
+      palette.close();
+      if (action === 'search') focusSearch();
+      else if (action === 'help') help.showModal();
+      else window.location.assign(link.getAttribute('href') ?? '/');
+    };
+
+    const focusSearch = () => {
+      const search = document.querySelector<HTMLInputElement>('[data-search]');
+      if (search) {
+        search.focus();
+        search.select();
+      } else {
+        window.location.assign('/leads');
+      }
+    };
+
+    // ── Palette-local keys ──────────────────────────────────────────────────
+    input.addEventListener('input', () => filter(input.value));
+    const moveActive = (dir: 1 | -1) => {
+      const vis = visibleItems();
+      if (vis.length === 0) return;
+      const pos = vis.indexOf(items[activeIndex]);
+      const nextPos = ((pos === -1 ? 0 : pos) + dir + vis.length) % vis.length;
+      setActive(items.indexOf(vis[nextPos]));
+    };
+
+    palette.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || (e.key === 'n' && e.ctrlKey)) {
+        e.preventDefault();
+        moveActive(1);
+      } else if (e.key === 'ArrowUp' || (e.key === 'p' && e.ctrlKey)) {
+        e.preventDefault();
+        moveActive(-1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        runActive();
+      }
+    });
+
+    // Click selects + runs (close first so navigation isn't blocked by the modal).
+    for (const it of items) {
+      const link = it.querySelector<HTMLAnchorElement>('.cmdk-link');
+      link?.addEventListener('click', (e) => {
+        const action = link.dataset.action;
+        if (action) {
+          e.preventDefault();
+          palette.close();
+          if (action === 'search') focusSearch();
+          else if (action === 'help') help.showModal();
+        }
+        // plain href links navigate natively after the dialog closes on click.
+      });
+      it.addEventListener('mousemove', () => {
+        if (!it.hidden) setActive(items.indexOf(it));
+      });
+    }
+
+    // Mouse affordance: any [data-cmdk-open] trigger (the header button).
+    for (const trigger of document.querySelectorAll<HTMLElement>('[data-cmdk-open]')) {
+      trigger.addEventListener('click', openPalette);
+    }
+
+    // ── Global shortcuts ────────────────────────────────────────────────────
+    let pendingG = false;
+    let gTimer: ReturnType<typeof setTimeout> | undefined;
+
+    document.addEventListener('keydown', (e) => {
+      // ⌘K / Ctrl+K opens the palette from anywhere (even inside inputs).
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openPalette();
+        return;
+      }
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      // Don't hijack typing.
+      if (isTypingContext(e.target)) return;
+
+      // `g` prefix for go-to sequences.
+      if (pendingG) {
+        pendingG = false;
+        clearTimeout(gTimer);
+        if (e.key === 't') {
+          e.preventDefault();
+          window.location.assign('/today');
+          return;
+        }
+        if (e.key === 'l') {
+          e.preventDefault();
+          window.location.assign('/leads');
+          return;
+        }
+      }
+
+      switch (e.key) {
+        case 'g':
+          pendingG = true;
+          gTimer = setTimeout(() => {
+            pendingG = false;
+          }, 600);
+          break;
+        case '/':
+          e.preventDefault();
+          focusSearch();
+          break;
+        case ':':
+          e.preventDefault();
+          openPalette();
+          break;
+        case 'n':
+          e.preventDefault();
+          window.location.assign('/leads/new');
+          break;
+        case 'i':
+          e.preventDefault();
+          window.location.assign('/leads/import');
+          break;
+        case '?':
+          e.preventDefault();
+          if (!help.open) help.showModal();
+          break;
+        case 'j':
+          e.preventDefault();
+          moveRow(1);
+          break;
+        case 'k':
+          e.preventDefault();
+          moveRow(-1);
+          break;
+        case 'Enter':
+          openActiveRow();
+          break;
+      }
+    });
+
+    // ── Row navigation over any [data-nav-list] on the page ──────────────────
+    const rowLists = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-list]'));
+    const navRows = rowLists.flatMap((l) =>
+      Array.from(l.querySelectorAll<HTMLElement>('[data-nav-row]')),
+    );
+    let rowIndex = -1;
+
+    const setRow = (idx: number) => {
+      if (navRows.length === 0) return;
+      const clamped = Math.max(0, Math.min(idx, navRows.length - 1));
+      for (const r of navRows) delete r.dataset.navActive;
+      const row = navRows[clamped];
+      row.dataset.navActive = '';
+      row.scrollIntoView({ block: 'nearest' });
+      rowIndex = clamped;
+    };
+
+    function moveRow(dir: 1 | -1) {
+      if (navRows.length === 0) return;
+      setRow(rowIndex === -1 ? (dir === 1 ? 0 : navRows.length - 1) : rowIndex + dir);
+    }
+
+    function openActiveRow() {
+      if (rowIndex < 0) return;
+      const href = navRows[rowIndex]?.dataset.href;
+      if (href) window.location.assign(href);
+    }
+
+    for (const [i, row] of navRows.entries()) {
+      row.addEventListener('mouseenter', () => {
+        rowIndex = i;
+      });
+    }
+  }
+</script>

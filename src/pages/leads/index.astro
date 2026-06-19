@@ -17,8 +17,23 @@ if (statusResult && !statusResult.error) {
 
 const params = Astro.url.searchParams;
 
-// Round-trip the current filter query so the status form can return here.
-const returnTo = params.toString() ? `/leads?${params.toString()}` : '/leads';
+const isStatus = (s: string | null): s is LeadStatus =>
+  !!s && (LEAD_STATUSES as readonly string[]).includes(s);
+
+// A just-completed status change leaves a one-shot toast/flash signal in the URL
+// (changed/from/to). It drives the confirmation toast + the row flash, then a
+// client script strips it so a reload doesn't replay it.
+const changedId = params.get('changed');
+const fromStatus = params.get('from');
+const toStatus = params.get('to');
+const showStatusToast = !!changedId && isStatus(fromStatus) && isStatus(toStatus);
+
+// Round-trip the current filter query so the status form can return here — but
+// without the one-shot toast params, so the canonical list URL stays clean.
+const cleanParams = new URLSearchParams(params);
+for (const k of ['changed', 'from', 'to']) cleanParams.delete(k);
+const cleanQs = cleanParams.toString();
+const returnTo = cleanQs ? `/leads?${cleanQs}` : '/leads';
 
 // Calendar-date comparison in the app timezone (avoids UTC-offset edge cases).
 const todayIso = isoDateVienna(new Date());
@@ -156,14 +171,19 @@ function statusToggleHref(status: LeadStatus): string {
               <th class="px-3 py-2 font-semibold">Firma</th>
               <th class="px-3 py-2 font-semibold">E-Mail</th>
               <th class="px-3 py-2 font-semibold">Status</th>
-              <th class="px-3 py-2 font-semibold">Last Touch</th>
+              <th class="px-3 py-2 font-semibold">Letzter Kontakt</th>
               <th class="px-3 py-2 font-semibold">Wiedervorlage</th>
-              <th class="px-3 py-2 font-semibold">Next Action</th>
+              <th class="px-3 py-2 font-semibold">Nächste Aktion</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody data-nav-list>
             {rows.map((lead) => (
-              <tr class="group border-b border-border last:border-0 hover:bg-surface-sunken">
+              <tr
+                class="group border-b border-border last:border-0 hover:bg-surface-sunken"
+                data-nav-row
+                data-href={`/leads/${lead.id}`}
+                data-flash={lead.id === changedId ? '' : undefined}
+              >
                 <td class="px-3 py-1.5">
                   <a
                     href={`/leads/${lead.id}`}
@@ -224,4 +244,69 @@ function statusToggleHref(status: LeadStatus): string {
       </div>
     )
   }
+
+  {
+    showStatusToast && (
+      <div
+        id="status-toast"
+        class="fixed bottom-4 right-4 z-50 max-w-sm rounded-sm border border-success-border bg-success-bg p-4 text-sm text-success shadow-[0_8px_24px_-6px_oklch(0_0_0/0.18)]"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="flex items-start gap-3">
+          <p class="flex-1 font-semibold">Status aktualisiert</p>
+          <button
+            type="button"
+            data-dismiss
+            class="font-medium text-success hover:opacity-70"
+            aria-label="Schließen"
+          >
+            ✕
+          </button>
+        </div>
+        <p class="mt-2 flex items-center gap-1.5">
+          <span class:list={['tag', STATUS_CLASSES[fromStatus as LeadStatus]]}>
+            {STATUS_LABELS[fromStatus as LeadStatus]}
+          </span>
+          <span aria-hidden="true" class="data text-muted">→</span>
+          <span class:list={['tag', STATUS_CLASSES[toStatus as LeadStatus]]}>
+            {STATUS_LABELS[toStatus as LeadStatus]}
+          </span>
+        </p>
+        <form method="POST" action={actions.updateLeadStatus} class="mt-3">
+          <input type="hidden" name="id" value={changedId} />
+          <input type="hidden" name="status" value={fromStatus} />
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <button type="submit" class="font-medium text-success underline hover:opacity-70">
+            Rückgängig
+          </button>
+        </form>
+      </div>
+    )
+  }
 </Layout>
+
+<script>
+  // One-shot status toast: strip the changed/from/to params so a reload won't
+  // replay the toast, and auto-dismiss after a few seconds.
+  const toast = document.getElementById('status-toast');
+  if (toast) {
+    const url = new URL(window.location.href);
+    let dirty = false;
+    for (const k of ['changed', 'from', 'to']) {
+      if (url.searchParams.has(k)) {
+        url.searchParams.delete(k);
+        dirty = true;
+      }
+    }
+    if (dirty) history.replaceState(null, '', url.pathname + url.search);
+    const hide = () => toast.setAttribute('hidden', '');
+    const timer = setTimeout(hide, 6000);
+    toast
+      .querySelector('[data-dismiss]')
+      ?.addEventListener('click', () => {
+        clearTimeout(timer);
+        hide();
+      });
+  }
+</script>

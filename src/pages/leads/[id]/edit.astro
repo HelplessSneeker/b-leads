@@ -43,9 +43,9 @@ const conflictMessage = isConflict ? updateResult?.error.message : undefined;
 <Layout title={`${lead.name} bearbeiten · b-leads`}>
   <nav class="text-sm text-muted">
     <a href="/leads" class="hover:text-ink">Leads</a>
-    <span class="px-1 text-border">/</span>
+    <span class="px-1 text-muted">/</span>
     <a href={`/leads/${lead.id}`} class="hover:text-ink">{lead.name}</a>
-    <span class="px-1 text-border">/</span>
+    <span class="px-1 text-muted">/</span>
     <span class="text-ink">Bearbeiten</span>
   </nav>
 

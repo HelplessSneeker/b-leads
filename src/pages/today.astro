@@ -60,9 +60,19 @@ const tdClass = 'px-3 py-1.5 text-muted';
 
   {
     nothingToDo ? (
-      <p class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
-        Nichts zu tun — alle Leads sind aktuell.
-      </p>
+      <div class="mt-6 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
+        <p>Nichts zu tun — alle Leads sind aktuell.</p>
+        <p class="mt-1">
+          <a href="/leads" class="font-medium text-accent-text hover:underline">
+            Alle Leads ansehen
+          </a>{' '}
+          oder{' '}
+          <a href="/leads/new" class="font-medium text-accent-text hover:underline">
+            neuen Lead anlegen
+          </a>
+          .
+        </p>
+      </div>
     ) : (
       <div class="mt-6 space-y-10">
         {dueFollowUps.length > 0 && (
@@ -81,38 +91,49 @@ const tdClass = 'px-3 py-1.5 text-muted';
                     <th class={thClass}>Tage überfällig</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {dueFollowUps.map((lead) => (
-                    <tr class="group border-b border-border last:border-0 hover:bg-surface-sunken">
-                      <td class="px-3 py-1.5">
-                        <a
-                          href={`/leads/${lead.id}`}
-                          title={lead.name}
-                          class="block max-w-[18ch] truncate font-medium text-ink transition-colors group-hover:text-accent-text"
-                        >
-                          {lead.name}
-                        </a>
-                      </td>
-                      <td class={tdClass}>
-                        <span class="block max-w-[16ch] truncate" title={lead.company ?? undefined}>
-                          {lead.company ?? '—'}
-                        </span>
-                      </td>
-                      <td class="px-3 py-1.5">
-                        <span class={`tag ${STATUS_CLASSES[lead.status]}`}>
-                          {STATUS_LABELS[lead.status]}
-                        </span>
-                      </td>
-                      <td class="px-3 py-1.5">
-                        <span class="data font-medium text-danger">{formatDate(lead.followUpAt)}</span>
-                      </td>
-                      <td class="px-3 py-1.5">
-                        <span class="data font-medium text-danger">
-                          {lead.followUpAt ? daysSince(lead.followUpAt) : 0}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody data-nav-list>
+                  {dueFollowUps.map((lead) => {
+                    // Due today reads as amber ("heute"); genuinely overdue as red.
+                    const overdue = lead.followUpAt ? daysSince(lead.followUpAt) : 0;
+                    const urgency = overdue === 0 ? 'text-warning' : 'text-danger';
+                    return (
+                      <tr
+                        class="group border-b border-border last:border-0 hover:bg-surface-sunken"
+                        data-nav-row
+                        data-href={`/leads/${lead.id}`}
+                      >
+                        <td class="px-3 py-1.5">
+                          <a
+                            href={`/leads/${lead.id}`}
+                            title={lead.name}
+                            class="block max-w-[18ch] truncate font-medium text-ink transition-colors group-hover:text-accent-text"
+                          >
+                            {lead.name}
+                          </a>
+                        </td>
+                        <td class={tdClass}>
+                          <span class="block max-w-[16ch] truncate" title={lead.company ?? undefined}>
+                            {lead.company ?? '—'}
+                          </span>
+                        </td>
+                        <td class="px-3 py-1.5">
+                          <span class={`tag ${STATUS_CLASSES[lead.status]}`}>
+                            {STATUS_LABELS[lead.status]}
+                          </span>
+                        </td>
+                        <td class="px-3 py-1.5">
+                          <span class:list={['data font-medium', urgency]}>
+                            {formatDate(lead.followUpAt)}
+                          </span>
+                        </td>
+                        <td class="px-3 py-1.5">
+                          <span class:list={['data font-medium', urgency]}>
+                            {overdue === 0 ? 'heute' : overdue}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -122,7 +143,7 @@ const tdClass = 'px-3 py-1.5 text-muted';
         {stale.length > 0 && (
           <section>
             <h2 class="text-[1.125rem] font-semibold text-ink">
-              Stale Follow-ups (7+ Tage) <span class="font-mono text-base text-muted">({stale.length})</span>
+              Inaktiv (7+ Tage) <span class="font-mono text-base text-muted">({stale.length})</span>
             </h2>
             <div class="mt-3 overflow-x-auto rounded-sm border border-border bg-surface">
               <table class="w-full text-left text-sm">
@@ -130,13 +151,17 @@ const tdClass = 'px-3 py-1.5 text-muted';
                   <tr>
                     <th class={thClass}>Name</th>
                     <th class={thClass}>Firma</th>
-                    <th class={thClass}>Last Touch</th>
-                    <th class={thClass}>Tage seit Last Touch</th>
+                    <th class={thClass}>Letzter Kontakt</th>
+                    <th class={thClass}>Tage seit Kontakt</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody data-nav-list>
                   {stale.map((lead) => (
-                    <tr class="group border-b border-border last:border-0 hover:bg-surface-sunken">
+                    <tr
+                      class="group border-b border-border last:border-0 hover:bg-surface-sunken"
+                      data-nav-row
+                      data-href={`/leads/${lead.id}`}
+                    >
                       <td class="px-3 py-1.5">
                         <a
                           href={`/leads/${lead.id}`}

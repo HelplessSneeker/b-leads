@@ -9,7 +9,7 @@ const FIELD_LABELS: Record<ImportableLeadField, string> = {
   company: 'Firma',
   role: 'Rolle',
   source: 'Quelle',
-  nextAction: 'Next Action',
+  nextAction: 'Nächste Aktion',
   notes: 'Notizen',
 };
 
