@@ -182,6 +182,9 @@ const shortcuts: { keys: string[]; label: string }[] = [
     padding: 4px;
     max-height: min(24rem, 60vh);
     overflow-y: auto;
+    /* Scrollbar chrome is themed globally (see global.css @layer base); contain
+       overscroll so wheel momentum doesn't leak to the page behind the dialog. */
+    overscroll-behavior: contain;
   }
 
   .cmdk-link {
