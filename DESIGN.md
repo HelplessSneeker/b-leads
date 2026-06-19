@@ -62,6 +62,7 @@ rounded:
   xs: "2px"
   sm: "3px"
   md: "4px"
+  overlay: "6px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -179,10 +180,12 @@ OKLCH.
 ### Tertiary — Semantic status vocabulary
 Six fixed hues, one per pipeline status. They appear **only** on status tags and
 the follow-up cell, never as decoration. Values below are the tag *text* color;
-the tag background is a pale tint of the same hue (light) or a ~14%-opacity tint
-of the same hue (dark).
+the tag background is a pale tint of the same hue (light) or a ~10%-opacity tint
+of the same hue (dark). The dark tint is held at 10% (not 14%) so the bright
+tag text clears WCAG AA (≥4.5:1) at its 11px size; the achromatic Neu/Notiz tags
+lift their dark text to `oklch(0.84 0 0)` for the same reason.
 
-- **Neu / new** — neutral (`oklch(0.40 0 0)` light / `oklch(0.72 0 0)` dark).
+- **Neu / new** — neutral (`oklch(0.40 0 0)` light / `oklch(0.84 0 0)` dark).
 - **Kontaktiert / contacted** — blue 225° (`oklch(0.45 0.15 225)` / `oklch(0.82 0.10 225)`).
 - **Geantwortet / replied** — violet 295° (`oklch(0.45 0.18 295)` / `oklch(0.82 0.12 295)`).
 - **Qualifiziert / qualified** — amber 72° (`oklch(0.46 0.12 72)` / `oklch(0.83 0.11 72)`).
@@ -253,6 +256,7 @@ Shadows exist for exactly one job: lifting a true overlay off the page so it rea
 as temporarily above everything. Two tokens, nothing more.
 
 - **overlay** (`box-shadow: 0 8px 24px -6px oklch(0 0 0 / 0.18)` light; `0 8px 24px -6px oklch(0 0 0 / 0.55)` dark): Dropdowns, popovers, dialogs, command palette.
+- **scrim** (`--scrim: oklch(0 0 0 / 0.4)`, mode-independent, with `backdrop-filter: blur(2px)`): The dim behind a modal overlay (command palette, status picker).
 - **focus-ring** (`box-shadow: 0 0 0 2px {bg}, 0 0 0 4px {accent}`): The keyboard
   focus indicator — load-bearing, since the console is keyboard-forward.
 
@@ -286,8 +290,8 @@ squared *tag* reads as data, not as a marketing badge.
   (11px/600/uppercase).
 - **Light:** pale tint of the status hue as background + the saturated status hue as
   text.
-- **Dark:** ~14%-opacity tint of the status hue as background + the bright status hue
-  as text.
+- **Dark:** ~10%-opacity tint of the status hue as background + the bright status hue
+  as text (10% keeps the 11px text at WCAG AA ≥4.5:1).
 - **As a filter (the status stat row):** the same tag plus a mono count. Selected
   state = a 2px accent ring (Two Vocabularies Rule: selection is indigo, the tag's
   own hue stays its status color).

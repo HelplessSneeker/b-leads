@@ -1,5 +1,6 @@
 ---
-import { STATUS_LABELS } from '~/components/leadStatus';
+import { actions } from 'astro:actions';
+import { STATUS_CLASSES, STATUS_LABELS } from '~/components/leadStatus';
 import { LEAD_STATUSES } from '~/db/schema';
 
 // Keyboard layer for the console (PRODUCT.md: "keyboard-forward"). Rendered once
@@ -52,6 +53,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
   { keys: ['j'], label: 'Zeile abwärts' },
   { keys: ['k'], label: 'Zeile aufwärts' },
   { keys: ['↵'], label: 'Ausgewählte Zeile öffnen' },
+  { keys: ['s'], label: 'Status der Zeile ändern' },
   { keys: ['?'], label: 'Diese Hilfe' },
   { keys: ['Esc'], label: 'Schließen' },
 ];
@@ -118,6 +120,35 @@ const shortcuts: { keys: string[]; label: string }[] = [
   </div>
 </dialog>
 
+<dialog id="status-dialog" class="cmdk" aria-label="Status ändern" transition:persist="status-dialog">
+  <div class="cmdk-panel cmdk-panel--status">
+    <p class="status-title">Status ändern<span class="status-lead" data-status-name></span></p>
+    <form method="POST" action={actions.updateLeadStatus} data-status-form>
+      <input type="hidden" name="id" data-status-id />
+      <input type="hidden" name="returnTo" data-status-returnto />
+      <ul class="status-options" role="list">
+        {
+          LEAD_STATUSES.map((s) => (
+            <li>
+              <button type="submit" name="status" value={s} class="status-option" data-status-value={s}>
+                <span class:list={['tag', STATUS_CLASSES[s]]}>{STATUS_LABELS[s]}</span>
+                <span class="status-current" data-current-label hidden>
+                  aktuell
+                </span>
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+    </form>
+    <footer class="cmdk-footer">
+      <span><kbd>↑</kbd><kbd>↓</kbd> wählen</span>
+      <span><kbd>↵</kbd> ändern</span>
+      <span><kbd>esc</kbd> abbrechen</span>
+    </footer>
+  </div>
+</dialog>
+
 <style>
   /* Native <dialog> escapes every stacking/overflow context (skill guidance:
      don't trap an overlay inside an overflow:auto container). */
@@ -130,7 +161,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
     max-height: 100vh;
   }
   .cmdk::backdrop {
-    background: oklch(0 0 0 / 0.4);
+    background: var(--scrim);
     backdrop-filter: blur(2px);
   }
   .cmdk[open] {
@@ -153,7 +184,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
     width: min(34rem, calc(100vw - 2rem));
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-overlay);
     box-shadow: var(--overlay-shadow);
     overflow: hidden;
   }
@@ -284,6 +315,71 @@ const shortcuts: { keys: string[]; label: string }[] = [
     margin: 0 -18px;
   }
 
+  /* Status picker — same overlay vocabulary as the palette, narrower. Opened for
+     the keyboard-selected row (`s`) or by clicking a row's status tag. Confirmable:
+     status only changes when an option is explicitly chosen, never on a passive
+     scroll/arrow the way the old inline auto-submitting <select> could. */
+  .cmdk-panel--status {
+    width: min(22rem, calc(100vw - 2rem));
+  }
+  .status-title {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .status-lead {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .status-options {
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    display: grid;
+    gap: 2px;
+    max-height: min(20rem, 60vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .status-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+  }
+  /* Roving keyboard focus / hover = interaction highlight (surface tone), keeping
+     the indigo accent for the focus ring only — the Two Vocabularies rule. */
+  .status-option:hover,
+  .status-option:focus-visible {
+    background: var(--surface-sunken);
+  }
+  /* Touch: full 44px tap target for the picker options (room to spare in the modal). */
+  @media (pointer: coarse) {
+    .status-option {
+      min-height: 44px;
+    }
+  }
+  /* "aktuell" marks the current status as state, never with the interaction accent. */
+  .status-current {
+    margin-left: auto;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   /* Entrance: brief fade + lift. ~75% exit handled by the [open] gate. */
   @keyframes cmdk-in {
     from {
@@ -332,6 +428,57 @@ const shortcuts: { keys: string[]; label: string }[] = [
     const items = Array.from(list.querySelectorAll<HTMLLIElement>('.cmdk-item'));
     let activeIndex = 0;
 
+    // ── Status picker (confirmable status change) ────────────────────────────
+    // Persisted like the palette so these refs stay valid across view transitions.
+    const statusDialog = document.getElementById('status-dialog') as Dialog | null;
+    const statusForm = statusDialog?.querySelector<HTMLFormElement>('[data-status-form]') ?? null;
+    const statusId = statusDialog?.querySelector<HTMLInputElement>('[data-status-id]') ?? null;
+    const statusReturnTo =
+      statusDialog?.querySelector<HTMLInputElement>('[data-status-returnto]') ?? null;
+    const statusName = statusDialog?.querySelector<HTMLElement>('[data-status-name]') ?? null;
+    const statusOptions = statusDialog
+      ? Array.from(statusDialog.querySelectorAll<HTMLButtonElement>('.status-option'))
+      : [];
+
+    // The list URL to return to after the change, minus any stale toast params.
+    const listReturnTo = (): string => {
+      const url = new URL(window.location.href);
+      for (const k of ['changed', 'from', 'to']) url.searchParams.delete(k);
+      const qs = url.searchParams.toString();
+      return qs ? `${url.pathname}?${qs}` : url.pathname;
+    };
+
+    const openStatusPicker = (id: string, status: string, name: string) => {
+      if (!statusDialog || !statusId || !statusReturnTo) return;
+      if (palette.open || help.open || statusDialog.open) return;
+      statusId.value = id;
+      statusReturnTo.value = listReturnTo();
+      if (statusName) statusName.textContent = name ? ` · ${name}` : '';
+      // Mark the current status (state, via the muted "aktuell" label) and focus it.
+      let focusTarget: HTMLButtonElement | undefined = statusOptions[0];
+      for (const opt of statusOptions) {
+        const isCurrent = opt.dataset.statusValue === status;
+        const label = opt.querySelector<HTMLElement>('[data-current-label]');
+        if (label) label.hidden = !isCurrent;
+        if (isCurrent) focusTarget = opt;
+      }
+      statusDialog.showModal();
+      focusTarget?.focus();
+    };
+
+    // Arrow keys rove focus across the options; Enter submits the focused button
+    // (native), Esc closes (native). Close on submit so the persisted dialog isn't
+    // left open across the post-change navigation.
+    statusDialog?.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      const here = statusOptions.indexOf(document.activeElement as HTMLButtonElement);
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      const next = ((here === -1 ? 0 : here) + dir + statusOptions.length) % statusOptions.length;
+      statusOptions[next]?.focus();
+    });
+    statusForm?.addEventListener('submit', () => statusDialog?.close());
+
     const isTypingContext = (el: EventTarget | null): boolean => {
       const node = el as HTMLElement | null;
       if (!node) return false;
@@ -379,7 +526,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
     };
 
     const openPalette = () => {
-      if (palette.open || help.open) return;
+      if (palette.open || help.open || statusDialog?.open) return;
       input.value = '';
       filter('');
       palette.showModal();
@@ -454,6 +601,13 @@ const shortcuts: { keys: string[]; label: string }[] = [
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       if (target?.closest('[data-cmdk-open]')) openPalette();
+      // A row's status tag is a button that opens the picker for that row.
+      if (target?.closest('[data-status-trigger]')) {
+        const row = target.closest<HTMLElement>('[data-nav-row]');
+        if (row?.dataset.leadId) {
+          openStatusPicker(row.dataset.leadId, row.dataset.status ?? '', row.dataset.name ?? '');
+        }
+      }
     });
 
     // ── Global shortcuts ────────────────────────────────────────────────────
@@ -468,6 +622,8 @@ const shortcuts: { keys: string[]; label: string }[] = [
         return;
       }
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      // The status picker owns its own keys (native Enter/Esc + arrow roving).
+      if (statusDialog?.open) return;
       // Don't hijack typing.
       if (isTypingContext(e.target)) return;
 
@@ -522,9 +678,18 @@ const shortcuts: { keys: string[]; label: string }[] = [
           e.preventDefault();
           moveRow(-1);
           break;
-        case 'Enter':
+        case 's':
+          e.preventDefault();
+          openStatusForActiveRow();
+          break;
+        case 'Enter': {
+          // If a real control (the status tag, the name link) is focused, let it
+          // act natively instead of also opening the keyboard-selected row.
+          const el = e.target as HTMLElement | null;
+          if (el?.closest('a, button')) break;
           openActiveRow();
           break;
+        }
       }
     });
 
@@ -555,6 +720,14 @@ const shortcuts: { keys: string[]; label: string }[] = [
       if (href) window.location.assign(href);
     }
 
+    // `s` on the keyboard-selected row opens the confirmable status picker.
+    function openStatusForActiveRow() {
+      if (rowIndex < 0) return;
+      const row = navRows[rowIndex];
+      if (!row?.dataset.leadId) return;
+      openStatusPicker(row.dataset.leadId, row.dataset.status ?? '', row.dataset.name ?? '');
+    }
+
     const resolveRows = () => {
       const rowLists = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-list]'));
       navRows = rowLists.flatMap((l) =>
@@ -566,6 +739,12 @@ const shortcuts: { keys: string[]; label: string }[] = [
           rowIndex = i;
         });
       }
+      // After a status change the server re-renders with the changed row flagged
+      // (data-flash). Re-select it so keyboard position + scroll survive the PRG
+      // round-trip — the operator keeps their place mid-triage instead of resetting
+      // to the top of the list on every change.
+      const flashed = navRows.findIndex((row) => row.hasAttribute('data-flash'));
+      if (flashed >= 0) setRow(flashed);
     };
 
     // ClientRouter does not re-run this module after a view transition, so the
