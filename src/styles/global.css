@@ -438,3 +438,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+@layer utilities {
+  /* Hide the scrollbar chrome while keeping overflow scrolling functional
+     (shift-wheel / trackpad-swipe still scroll the container). */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Safari + Chrome */
+  }
+}
