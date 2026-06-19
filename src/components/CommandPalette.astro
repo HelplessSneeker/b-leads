@@ -57,7 +57,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
 ];
 ---
 
-<dialog id="cmdk" class="cmdk" aria-label="Befehlspalette">
+<dialog id="cmdk" class="cmdk" aria-label="Befehlspalette" transition:persist="cmdk">
   <div class="cmdk-panel">
     <input
       id="cmdk-input"
@@ -95,7 +95,7 @@ const shortcuts: { keys: string[]; label: string }[] = [
   </div>
 </dialog>
 
-<dialog id="kbd-help" class="cmdk" aria-label="Tastaturkürzel">
+<dialog id="kbd-help" class="cmdk" aria-label="Tastaturkürzel" transition:persist="kbd-help">
   <div class="cmdk-panel cmdk-panel--help">
     <h2 class="kbd-help-title">Tastaturkürzel</h2>
     <ul class="kbd-help-list">
@@ -138,8 +138,14 @@ const shortcuts: { keys: string[]; label: string }[] = [
        list stable as it shrinks while filtering. */
     position: fixed;
     inset: 0;
+    /* The native <dialog> UA stylesheet sets width/height: fit-content, so
+       inset:0 alone leaves the box content-sized and pinned to the left edge.
+       Reset to auto so the inset offsets stretch it across the viewport — only
+       then does place-content actually center the panel. */
+    width: auto;
+    height: auto;
     display: grid;
-    place-items: start center;
+    place-content: start center;
     padding-top: 12vh;
   }
 
@@ -176,6 +182,9 @@ const shortcuts: { keys: string[]; label: string }[] = [
     padding: 4px;
     max-height: min(24rem, 60vh);
     overflow-y: auto;
+    /* Scrollbar chrome is themed globally (see global.css @layer base); contain
+       overscroll so wheel momentum doesn't leak to the page behind the dialog. */
+    overscroll-behavior: contain;
   }
 
   .cmdk-link {
@@ -440,10 +449,12 @@ const shortcuts: { keys: string[]; label: string }[] = [
       });
     }
 
-    // Mouse affordance: any [data-cmdk-open] trigger (the header button).
-    for (const trigger of document.querySelectorAll<HTMLElement>('[data-cmdk-open]')) {
-      trigger.addEventListener('click', openPalette);
-    }
+    // Mouse affordance: the [data-cmdk-open] trigger (header button). Delegated on
+    // document so it survives view transitions swapping the header out from under us.
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-cmdk-open]')) openPalette();
+    });
 
     // ── Global shortcuts ────────────────────────────────────────────────────
     let pendingG = false;
@@ -518,10 +529,9 @@ const shortcuts: { keys: string[]; label: string }[] = [
     });
 
     // ── Row navigation over any [data-nav-list] on the page ──────────────────
-    const rowLists = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-list]'));
-    const navRows = rowLists.flatMap((l) =>
-      Array.from(l.querySelectorAll<HTMLElement>('[data-nav-row]')),
-    );
+    // navRows is page-specific, so it's re-resolved on every astro:page-load (see
+    // the bottom of this block). The keydown handler reads it through this binding.
+    let navRows: HTMLElement[] = [];
     let rowIndex = -1;
 
     const setRow = (idx: number) => {
@@ -545,10 +555,23 @@ const shortcuts: { keys: string[]; label: string }[] = [
       if (href) window.location.assign(href);
     }
 
-    for (const [i, row] of navRows.entries()) {
-      row.addEventListener('mouseenter', () => {
-        rowIndex = i;
-      });
-    }
+    const resolveRows = () => {
+      const rowLists = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-list]'));
+      navRows = rowLists.flatMap((l) =>
+        Array.from(l.querySelectorAll<HTMLElement>('[data-nav-row]')),
+      );
+      rowIndex = -1;
+      for (const [i, row] of navRows.entries()) {
+        row.addEventListener('mouseenter', () => {
+          rowIndex = i;
+        });
+      }
+    };
+
+    // ClientRouter does not re-run this module after a view transition, so the
+    // page-specific row list is rebuilt on every astro:page-load (which also fires
+    // on the initial load). The palette dialogs persist via transition:persist, so
+    // their wiring above stays valid across navigations.
+    document.addEventListener('astro:page-load', resolveRows);
   }
 </script>

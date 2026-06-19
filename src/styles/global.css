@@ -163,6 +163,33 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Page-level custom scrollbar — same thin, themed thumb as the command palette
+     so the whole console shares one scrollbar vocabulary instead of the wide UA
+     chrome. Firefox honours scrollbar-width/-color; ::-webkit-* covers Blink/WebKit. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 6px;
+    /* Transparent border carved out via background-clip leaves an inset gutter,
+       so the thumb floats clear of the edge. */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+    background-clip: padding-box;
+  }
+
   /* Load-bearing focus ring (keyboard-forward console): the focus-ring token,
      a 2px accent halo with a bg-colored gap, on every interactive control. */
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
@@ -436,5 +463,16 @@
     animation-duration: 0.01ms !important;
     /* biome-ignore lint/complexity/noImportantStyles: must beat smooth scrolling */
     scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  /* Hide the scrollbar chrome while keeping overflow scrolling functional
+     (shift-wheel / trackpad-swipe still scroll the container). */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Safari + Chrome */
   }
 }
