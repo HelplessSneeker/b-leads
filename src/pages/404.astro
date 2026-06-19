@@ -1,0 +1,12 @@
+---
+import NotFound from '~/components/NotFound.astro';
+import Layout from '~/layouts/Layout.astro';
+
+// Catch-all for unmatched routes (and the rewrite target for missing lead ids).
+// Set the status explicitly so a rewrite here still returns 404, not 200.
+Astro.response.status = 404;
+---
+
+<Layout title="Nicht gefunden · b-leads">
+  <NotFound />
+</Layout>

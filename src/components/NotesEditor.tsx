@@ -13,8 +13,8 @@ export default function NotesEditor({ value }: NotesEditorProps) {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
   const tabClass = (active: boolean) =>
-    `rounded px-3 py-1 text-sm font-medium ${
-      active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+    `rounded-sm px-3 py-1 text-sm font-medium transition-colors ${
+      active ? 'bg-accent text-white' : 'text-muted hover:bg-surface hover:text-ink'
     }`;
 
   return (
@@ -37,14 +37,12 @@ export default function NotesEditor({ value }: NotesEditorProps) {
         rows={8}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className={`w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none ${
-          mode === 'preview' ? 'hidden' : ''
-        }`}
+        className={`field ${mode === 'preview' ? 'hidden' : ''}`}
       />
 
       {mode === 'preview' && (
         <div
-          className="prose prose-sm max-w-none rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
+          className="notes-rendered max-w-none rounded-sm border border-border bg-surface px-3 py-2"
           // Trusted single-user input (see src/lib/markdown.ts).
           // biome-ignore lint/security/noDangerouslySetInnerHtml: rendered Markdown preview.
           dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }}

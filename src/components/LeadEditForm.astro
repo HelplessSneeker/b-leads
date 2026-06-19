@@ -32,15 +32,14 @@ const followUpValue = value(
 );
 const sources = getSources();
 
-const fieldClass =
-  'mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
-const labelClass = 'block text-sm font-medium text-gray-700';
-const errorClass = 'mt-1 text-sm text-red-600';
+const fieldClass = 'field mt-1';
+const labelClass = 'block text-sm font-medium text-ink';
+const errorClass = 'mt-1 text-sm text-danger';
 ---
 
 {
   isConflict && (
-    <div class="mt-4 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div class="mt-4 rounded-sm border border-danger-border bg-danger-bg p-4 text-sm text-danger">
       {conflictMessage}
     </div>
   )
@@ -50,13 +49,13 @@ const errorClass = 'mt-1 text-sm text-red-600';
   <input type="hidden" name="id" value={lead.id} />
 
   <div>
-    <label class={labelClass} for="name">Name</label>
+    <label class={labelClass} for="name">Name<span class="text-danger"> *</span></label>
     <input id="name" name="name" type="text" value={value('name', lead.name)} class={fieldClass} />
     {fieldErrors?.name && <p class={errorClass}>{fieldErrors.name[0]}</p>}
   </div>
 
   <div>
-    <label class={labelClass} for="email">E-Mail</label>
+    <label class={labelClass} for="email">E-Mail<span class="text-danger"> *</span></label>
     <input id="email" name="email" type="email" value={value('email', lead.email)} class={fieldClass} />
     {fieldErrors?.email && <p class={errorClass}>{fieldErrors.email[0]}</p>}
   </div>
@@ -72,7 +71,7 @@ const errorClass = 'mt-1 text-sm text-red-600';
   </div>
 
   <div>
-    <label class={labelClass} for="source">Quelle</label>
+    <label class={labelClass} for="source">Quelle<span class="text-danger"> *</span></label>
     <input id="source" name="source" type="text" value={value('source', lead.source)} class={fieldClass} list="sources" />
     <datalist id="sources">{sources.map((s) => <option value={s} />)}</datalist>
     {fieldErrors?.source && <p class={errorClass}>{fieldErrors.source[0]}</p>}
@@ -92,7 +91,7 @@ const errorClass = 'mt-1 text-sm text-red-600';
   </div>
 
   <div>
-    <label class={labelClass} for="nextAction">Next Action</label>
+    <label class={labelClass} for="nextAction">Nächste Aktion</label>
     <input id="nextAction" name="nextAction" type="text" value={value('nextAction', lead.nextAction ?? '')} class={fieldClass} />
   </div>
 
@@ -109,12 +108,7 @@ const errorClass = 'mt-1 text-sm text-red-600';
   </div>
 
   <div class="flex items-center gap-3">
-    <button
-      type="submit"
-      class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-    >
-      Speichern
-    </button>
-    {cancelHref && <a href={cancelHref} class="text-sm text-gray-500 hover:text-gray-900">Abbrechen</a>}
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    {cancelHref && <a href={cancelHref} class="text-sm text-muted hover:text-ink">Abbrechen</a>}
   </div>
 </form>

@@ -7,7 +7,7 @@ import { leads } from '~/db/schema';
 import Layout from '~/layouts/Layout.astro';
 
 const { id } = Astro.params;
-if (!id) return new Response('Not found', { status: 404 });
+if (!id) return Astro.rewrite('/404');
 
 const updateResult = Astro.getActionResult(actions.updateLead);
 const deleteResult = Astro.getActionResult(actions.deleteLead);
@@ -18,7 +18,7 @@ if (deleteResult && !deleteResult.error) return Astro.redirect('/leads', 303);
 if (updateResult && !updateResult.error) return Astro.redirect(`/leads/${id}`, 303);
 
 const lead = db.select().from(leads).where(eq(leads.id, id)).get();
-if (!lead) return new Response('Not found', { status: 404 });
+if (!lead) return Astro.rewrite('/404');
 
 // On a failed mutation, keep what the user typed (middleware parsed a clone, so the
 // original body is still readable here).
@@ -41,15 +41,15 @@ const conflictMessage = isConflict ? updateResult?.error.message : undefined;
 ---
 
 <Layout title={`${lead.name} bearbeiten · b-leads`}>
-  <nav class="text-sm text-gray-500">
-    <a href="/leads" class="hover:text-gray-900">Leads</a>
-    <span class="px-1">/</span>
-    <a href={`/leads/${lead.id}`} class="hover:text-gray-900">{lead.name}</a>
-    <span class="px-1">/</span>
-    <span class="text-gray-900">Bearbeiten</span>
+  <nav class="text-sm text-muted">
+    <a href="/leads" class="hover:text-ink">Leads</a>
+    <span class="px-1 text-muted">/</span>
+    <a href={`/leads/${lead.id}`} class="hover:text-ink">{lead.name}</a>
+    <span class="px-1 text-muted">/</span>
+    <span class="text-ink">Bearbeiten</span>
   </nav>
 
-  <h1 class="mt-2 text-xl font-semibold">{lead.name} bearbeiten</h1>
+  <h1 class="mt-2 text-2xl font-semibold tracking-[-0.01em]">{lead.name} bearbeiten</h1>
 
   <LeadEditForm
     lead={lead}

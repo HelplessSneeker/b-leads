@@ -11,14 +11,16 @@ export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   note: 'Notiz',
 };
 
-// Badge colors per type. Keep these as complete literal strings so the Tailwind v4
-// JIT scanner picks them up (no dynamic concatenation), same as STATUS_CLASSES.
+// Activity-tag color modifier per type (pairs with the `.tag` base class from
+// global.css). A separate vocabulary from status hues; deliberately kept clear of
+// the 245° interaction accent (linkedin sits on violet/purple, not indigo) so a
+// badge can never be mistaken for an action.
 export const ACTIVITY_TYPE_CLASSES: Record<ActivityType, string> = {
-  email_sent: 'bg-blue-100 text-blue-700',
-  email_received: 'bg-sky-100 text-sky-700',
-  linkedin_sent: 'bg-indigo-100 text-indigo-700',
-  linkedin_received: 'bg-violet-100 text-violet-700',
-  call: 'bg-green-100 text-green-700',
-  meeting: 'bg-amber-100 text-amber-700',
-  note: 'bg-gray-100 text-gray-700',
+  email_sent: 'tag-act-email_sent',
+  email_received: 'tag-act-email_received',
+  linkedin_sent: 'tag-act-linkedin_sent',
+  linkedin_received: 'tag-act-linkedin_received',
+  call: 'tag-act-call',
+  meeting: 'tag-act-meeting',
+  note: 'tag-act-note',
 };

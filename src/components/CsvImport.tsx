@@ -9,7 +9,7 @@ const FIELD_LABELS: Record<ImportableLeadField, string> = {
   company: 'Firma',
   role: 'Rolle',
   source: 'Quelle',
-  nextAction: 'Next Action',
+  nextAction: 'Nächste Aktion',
   notes: 'Notizen',
 };
 
@@ -18,7 +18,16 @@ const FIELD_LABELS: Record<ImportableLeadField, string> = {
 const REQUIRED_FIELDS: ImportableLeadField[] = ['name', 'email'];
 
 type Mapping = Partial<Record<ImportableLeadField, string>>;
-type ImportResult = { inserted: number; duplicates: number; skipped: number };
+type ImportResult = {
+  inserted: number;
+  duplicates: number;
+  invalid: number;
+  skipped: number;
+};
+
+// Guard against accidentally loading a huge non-CSV file into the tab (reading it
+// as text would freeze the page). Generous for a leads export.
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 // Ready-to-insert lead row sent to the importLeads action (matches its Zod input).
 type ImportRow = {
@@ -31,8 +40,7 @@ type ImportRow = {
   notes?: string;
 };
 
-const inputClass =
-  'rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-gray-500 focus:outline-none';
+const inputClass = 'field';
 
 // Normalize a header/alias for matching: lowercase, strip diacritics + any
 // non-alphanumeric chars. So "E-Mail" -> "email", "Nächste Aktion" -> "nachsteaktion".
@@ -85,18 +93,44 @@ export default function CsvImport() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
+  // Reset any previously loaded file so a failed/empty load can't be imported.
+  function clearFile() {
+    setFileName('');
+    setHeaders([]);
+    setRows([]);
+    setMapping({});
+  }
+
   function onFile(file: File) {
     setResult(null);
     setError(null);
+    if (file.size > MAX_FILE_BYTES) {
+      clearFile();
+      setError('Datei ist zu groß (max. 10 MB).');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      const { headers, rows } = parseCsv(String(reader.result ?? ''));
+      const { headers, rows, errors } = parseCsv(String(reader.result ?? ''));
       setFileName(file.name);
+      if (headers.length === 0) {
+        clearFile();
+        setError('Keine Spalten erkannt — ist das eine gültige CSV-Datei?');
+        return;
+      }
       setHeaders(headers);
       setRows(rows);
       setMapping(autoMap(headers));
+      if (rows.length === 0) {
+        setError('Datei enthält keine Datenzeilen.');
+      } else if (errors.length > 0) {
+        setError(`CSV teilweise fehlerhaft gelesen: ${errors[0]}`);
+      }
     };
-    reader.onerror = () => setError('Datei konnte nicht gelesen werden.');
+    reader.onerror = () => {
+      clearFile();
+      setError('Datei konnte nicht gelesen werden.');
+    };
     reader.readAsText(file);
   }
 
@@ -121,7 +155,7 @@ export default function CsvImport() {
     return { payload, skipped };
   }, [rows, mapping, defaultSource]);
 
-  const canImport = rows.length > 0 && defaultSource.trim().length > 0 && !importing;
+  const canImport = payload.length > 0 && defaultSource.trim().length > 0 && !importing;
 
   async function onImport() {
     setError(null);
@@ -133,13 +167,15 @@ export default function CsvImport() {
         setError(error.message);
         return;
       }
-      setResult({ inserted: data.inserted, duplicates: data.duplicates, skipped });
+      setResult({
+        inserted: data.inserted,
+        duplicates: data.duplicates,
+        invalid: data.invalid,
+        skipped,
+      });
       // Reset the picker so the outcome (toast) is the clear end state and the
       // same file can't be re-imported by accident.
-      setFileName('');
-      setHeaders([]);
-      setRows([]);
-      setMapping({});
+      clearFile();
     } catch {
       setError('Import fehlgeschlagen.');
     } finally {
@@ -150,7 +186,7 @@ export default function CsvImport() {
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700" htmlFor="csv-file">
+        <label className="block text-sm font-medium text-ink" htmlFor="csv-file">
           CSV-Datei
         </label>
         <input
@@ -161,11 +197,12 @@ export default function CsvImport() {
             const file = e.target.files?.[0];
             if (file) onFile(file);
           }}
-          className="mt-1 block text-sm text-gray-600 file:mr-3 file:rounded file:border-0 file:bg-gray-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700"
+          className="mt-1 block text-sm text-muted file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-accent-hover"
         />
         {fileName && (
-          <p className="mt-1 text-sm text-gray-500">
-            {fileName} — {rows.length} Zeilen, {headers.length} Spalten
+          <p className="mt-1 text-sm text-muted">
+            <span className="data text-ink">{fileName}</span> — {rows.length} Zeilen,{' '}
+            {headers.length} Spalten
           </p>
         )}
       </div>
@@ -173,7 +210,7 @@ export default function CsvImport() {
       {rows.length > 0 && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="default-source">
+            <label className="block text-sm font-medium text-ink" htmlFor="default-source">
               Standard-Quelle (für Zeilen ohne gemappte Quelle)
             </label>
             <input
@@ -188,13 +225,13 @@ export default function CsvImport() {
           </div>
 
           <div>
-            <h2 className="text-sm font-medium text-gray-700">Spalten-Zuordnung</h2>
+            <h2 className="text-sm font-semibold text-ink">Spalten-Zuordnung</h2>
             <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {IMPORTABLE_LEAD_FIELDS.map((field) => (
                 <div key={field} className="flex items-center gap-2">
-                  <span className="w-28 shrink-0 text-sm text-gray-600">
+                  <span className="w-28 shrink-0 text-sm text-muted">
                     {FIELD_LABELS[field]}
-                    {REQUIRED_FIELDS.includes(field) && <span className="text-red-500"> *</span>}
+                    {REQUIRED_FIELDS.includes(field) && <span className="text-danger"> *</span>}
                   </span>
                   <select
                     value={mapping[field] ?? ''}
@@ -216,13 +253,13 @@ export default function CsvImport() {
           </div>
 
           <div>
-            <h2 className="text-sm font-medium text-gray-700">Vorschau (erste 5 Zeilen)</h2>
-            <div className="mt-2 overflow-x-auto rounded border border-gray-200 bg-white">
+            <h2 className="text-sm font-semibold text-ink">Vorschau (erste 5 Zeilen)</h2>
+            <div className="mt-2 overflow-x-auto rounded-sm border border-border bg-surface">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                <thead className="border-b border-border bg-surface-sunken text-[0.6875rem] uppercase tracking-[0.05em] text-muted">
                   <tr>
                     {headers.map((h) => (
-                      <th key={h} className="px-3 py-2 font-medium">
+                      <th key={h} className="px-3 py-2 font-semibold">
                         {h}
                       </th>
                     ))}
@@ -231,10 +268,10 @@ export default function CsvImport() {
                 <tbody>
                   {rows.slice(0, 5).map((row, i) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: preview rows are static.
-                    <tr key={i} className="border-b border-gray-100 last:border-0">
+                    <tr key={i} className="border-b border-border last:border-0">
                       {headers.map((h) => (
-                        <td key={h} className="px-3 py-2 text-gray-600">
-                          {row[h]}
+                        <td key={h} className="px-3 py-1.5">
+                          <span className="data text-muted">{row[h]}</span>
                         </td>
                       ))}
                     </tr>
@@ -249,12 +286,14 @@ export default function CsvImport() {
               type="button"
               disabled={!canImport}
               onClick={onImport}
-              className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn btn-primary"
             >
               {importing ? 'Importiere…' : `${payload.length} Leads importieren`}
             </button>
-            <span className="text-sm text-gray-500">
-              {skipped > 0 && `${skipped} Zeilen werden übersprungen (ohne Name/E-Mail)`}
+            <span className="text-sm text-muted">
+              {payload.length === 0
+                ? 'Keine importierbare Zeile — Name und E-Mail müssen zugeordnet sein.'
+                : skipped > 0 && `${skipped} Zeilen werden übersprungen (ohne Name/E-Mail)`}
             </span>
           </div>
         </>
@@ -264,12 +303,12 @@ export default function CsvImport() {
       {(result || error) && (
         <div className="fixed bottom-4 right-4 z-50 max-w-sm" role="status" aria-live="polite">
           {error ? (
-            <div className="flex items-start gap-3 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-lg">
+            <div className="flex items-start gap-3 rounded-sm border border-danger-border bg-danger-bg p-4 text-sm text-danger shadow-[0_8px_24px_-6px_oklch(0_0_0/0.18)]">
               <span className="flex-1">{error}</span>
               <button
                 type="button"
                 onClick={() => setError(null)}
-                className="font-medium text-red-500 hover:text-red-800"
+                className="font-medium text-danger hover:opacity-70"
                 aria-label="Schließen"
               >
                 ✕
@@ -277,26 +316,25 @@ export default function CsvImport() {
             </div>
           ) : (
             result && (
-              <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-800 shadow-lg">
+              <div className="rounded-sm border border-success-border bg-success-bg p-4 text-sm text-success shadow-[0_8px_24px_-6px_oklch(0_0_0/0.18)]">
                 <div className="flex items-start gap-3">
-                  <p className="flex-1 font-medium">Import abgeschlossen</p>
+                  <p className="flex-1 font-semibold">Import abgeschlossen</p>
                   <button
                     type="button"
                     onClick={() => setResult(null)}
-                    className="font-medium text-green-600 hover:text-green-900"
+                    className="font-medium text-success hover:opacity-70"
                     aria-label="Schließen"
                   >
                     ✕
                   </button>
                 </div>
                 <p className="mt-1">
-                  {result.inserted} importiert · {result.duplicates} Duplikate · {result.skipped}{' '}
-                  übersprungen (ohne Name/E-Mail).
+                  <span className="data">{result.inserted}</span> importiert ·{' '}
+                  <span className="data">{result.duplicates}</span> Duplikate ·{' '}
+                  <span className="data">{result.invalid}</span> ungültig ·{' '}
+                  <span className="data">{result.skipped}</span> übersprungen (ohne Name/E-Mail).
                 </p>
-                <a
-                  href="/leads"
-                  className="mt-2 inline-block font-medium underline hover:text-green-900"
-                >
+                <a href="/leads" className="mt-2 inline-block font-medium underline">
                   → zur Lead-Liste
                 </a>
               </div>

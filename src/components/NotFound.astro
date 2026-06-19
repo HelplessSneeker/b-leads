@@ -1,0 +1,19 @@
+---
+// Shared 404 surface — used by the global /404 route and by lead pages whose id
+// no longer resolves (deleted lead, stale bookmark). Keeps a dead end on-brand
+// and gives the operator a way back instead of raw "Not found" text.
+interface Props {
+  heading?: string;
+  message?: string;
+}
+
+const { heading = 'Nicht gefunden', message = 'Diese Seite existiert nicht oder wurde entfernt.' } =
+  Astro.props;
+---
+
+<div class="mt-16 flex flex-col items-center text-center">
+  <p class="data text-muted">404</p>
+  <h1 class="mt-2 text-2xl font-semibold tracking-[-0.01em]">{heading}</h1>
+  <p class="mt-2 max-w-sm text-sm text-muted">{message}</p>
+  <a href="/leads" class="btn btn-primary mt-6">Zur Lead-Liste</a>
+</div>

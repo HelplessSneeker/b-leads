@@ -1,7 +1,8 @@
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
+import { eq } from 'drizzle-orm';
 import { db } from '~/db';
-import { ACTIVITY_TYPES, LEAD_STATUSES } from '~/db/schema';
+import { ACTIVITY_TYPES, LEAD_STATUSES, leads } from '~/db/schema';
 import {
   createActivity as createActivityCore,
   deleteActivity as deleteActivityCore,
@@ -45,6 +46,18 @@ const leadInput = z.object({
     .optional(),
 });
 
+// Strict per-row schema for CSV import, validated row-by-row in the handler so one
+// bad row is skipped (counted as `invalid`) rather than failing the whole batch.
+const importRow = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  company: z.string().optional(),
+  role: z.string().optional(),
+  source: z.string().min(1),
+  nextAction: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 export const server = {
   createLead: defineAction({
     accept: 'form',
@@ -81,9 +94,22 @@ export const server = {
     }),
     handler: async ({ id, status, returnTo }) => {
       try {
+        // Capture the prior status so the list can show a confirmation toast with
+        // an undo path. (Core stays untouched/return-stable for its unit tests.)
+        const before = db
+          .select({ status: leads.status })
+          .from(leads)
+          .where(eq(leads.id, id))
+          .get();
         updateLeadStatusCore(db, { id, status });
         // Only allow same-app paths back to the list; fall back to /leads.
         const safeReturnTo = returnTo?.startsWith('/leads') ? returnTo : '/leads';
+        // Signal the one-shot toast + row flash, only when the status actually moved.
+        if (before && before.status !== status) {
+          const sep = safeReturnTo.includes('?') ? '&' : '?';
+          const toast = new URLSearchParams({ changed: id, from: before.status, to: status });
+          return { returnTo: `${safeReturnTo}${sep}${toast.toString()}` };
+        }
         return { returnTo: safeReturnTo };
       } catch (err) {
         return toActionError(err);
@@ -159,24 +185,23 @@ export const server = {
 
   importLeads: defineAction({
     // The CSV is parsed + mapped client-side; we receive ready-to-insert rows.
+    // The input is intentionally lenient (rows are validated per-row below) so a
+    // single malformed row — e.g. a junk email — is skipped and counted, never
+    // aborting the whole import the way a strict array schema would.
     accept: 'json',
-    input: z.array(
-      z.object({
-        name: z.string().min(1),
-        email: z.string().email(),
-        company: z.string().optional(),
-        role: z.string().optional(),
-        source: z.string().min(1),
-        nextAction: z.string().optional(),
-        notes: z.string().optional(),
-      }),
-    ),
+    input: z.array(z.record(z.string(), z.unknown())),
     handler: async (rows) => {
       let inserted = 0;
       let duplicates = 0;
-      for (const row of rows) {
+      let invalid = 0;
+      for (const raw of rows) {
+        const parsed = importRow.safeParse(raw);
+        if (!parsed.success) {
+          invalid++;
+          continue;
+        }
         try {
-          createLeadCore(db, row);
+          createLeadCore(db, parsed.data);
           inserted++;
         } catch (err) {
           if (err instanceof ConflictError) {
@@ -186,7 +211,7 @@ export const server = {
           return toActionError(err);
         }
       }
-      return { inserted, duplicates };
+      return { inserted, duplicates, invalid };
     },
   }),
 };
