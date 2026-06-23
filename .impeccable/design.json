@@ -128,8 +128,8 @@
         "purpose": "Table column headers and field labels. The only uppercase-tracked use."
       },
       "data": {
-        "displayName": "Data (Mono)",
-        "purpose": "IBM Plex Mono, tabular numerals: dates, counts, emails, IDs, follow-ups. The console's signature."
+        "displayName": "Data",
+        "purpose": "Tabular numerals via font-variant-numeric — dates, counts, emails, IDs, follow-ups. Same Inter family as body, only the numeric figures align."
       }
     },
     "shadows": [
@@ -177,7 +177,7 @@
       "refersTo": "button-primary",
       "description": "The single main action per view (e.g. Neuer Lead). Filled Console Indigo, white text.",
       "html": "<button class=\"ds-btn-primary\">Neuer Lead</button>",
-      "css": ".ds-btn-primary { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: #fff; background: oklch(0.50 0.17 245); border: none; border-radius: 3px; padding: 6px 12px; cursor: pointer; transition: background 150ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-primary:hover { background: oklch(0.45 0.17 245); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.50 0.17 245); } .ds-btn-primary:active { background: oklch(0.41 0.17 245); } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }"
+      "css": ".ds-btn-primary { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: #fff; background: oklch(0.50 0.17 245); border: none; border-radius: 3px; padding: 6px 12px; cursor: pointer; transition: background 150ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-primary:hover { background: oklch(0.45 0.17 245); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.50 0.17 245); } .ds-btn-primary:active { background: oklch(0.41 0.17 245); } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }"
     },
     {
       "name": "Secondary Button",
@@ -185,7 +185,7 @@
       "refersTo": "button-secondary",
       "description": "Default for most actions (e.g. CSV-Import). Surface fill, hairline border, ink text.",
       "html": "<button class=\"ds-btn-secondary\">CSV-Import</button>",
-      "css": ".ds-btn-secondary { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); background: oklch(0.975 0 0); border: 1px solid oklch(0.90 0 0); border-radius: 3px; padding: 6px 12px; cursor: pointer; transition: background 150ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-secondary:hover { background: oklch(0.945 0 0); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.50 0.17 245); } .ds-btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }"
+      "css": ".ds-btn-secondary { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); background: oklch(0.975 0 0); border: 1px solid oklch(0.90 0 0); border-radius: 3px; padding: 6px 12px; cursor: pointer; transition: background 150ms cubic-bezier(0.25,1,0.5,1); } .ds-btn-secondary:hover { background: oklch(0.945 0 0); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.50 0.17 245); } .ds-btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }"
     },
     {
       "name": "Status Tag",
@@ -193,7 +193,7 @@
       "refersTo": "status-tag",
       "description": "Pipeline state indicator. Small squared tag (not a pill), pale tint bg + saturated status-hue text. Shown here: Gewonnen / won.",
       "html": "<span class=\"ds-tag\">Gewonnen</span>",
-      "css": ".ds-tag { display: inline-block; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.43 0.13 150); background: oklch(0.95 0.04 150); border-radius: 2px; padding: 1px 6px; }"
+      "css": ".ds-tag { display: inline-block; font-family: 'Inter', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.43 0.13 150); background: oklch(0.95 0.04 150); border-radius: 2px; padding: 1px 6px; }"
     },
     {
       "name": "Search Input",
@@ -201,15 +201,15 @@
       "refersTo": "input",
       "description": "Text/select field. Hairline border, 3px radius, accent border + ring on focus, never-faint placeholder.",
       "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Suche Name, E-Mail, Firma…\" />",
-      "css": ".ds-input { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.875rem; color: oklch(0.24 0.012 245); background: #fff; border: 1px solid oklch(0.90 0 0); border-radius: 3px; padding: 6px 10px; transition: border-color 150ms cubic-bezier(0.25,1,0.5,1); } .ds-input::placeholder { color: oklch(0.47 0.012 245); } .ds-input:focus-visible { outline: none; border-color: oklch(0.50 0.17 245); box-shadow: 0 0 0 2px #fff, 0 0 0 3px oklch(0.50 0.17 245); }"
+      "css": ".ds-input { font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; color: oklch(0.24 0.012 245); background: #fff; border: 1px solid oklch(0.90 0 0); border-radius: 3px; padding: 6px 10px; transition: border-color 150ms cubic-bezier(0.25,1,0.5,1); } .ds-input::placeholder { color: oklch(0.47 0.012 245); } .ds-input:focus-visible { outline: none; border-color: oklch(0.50 0.17 245); box-shadow: 0 0 0 2px #fff, 0 0 0 3px oklch(0.50 0.17 245); }"
     },
     {
       "name": "Lead Table Row",
       "kind": "custom",
       "refersTo": "table-cell",
-      "description": "The signature surface. Dense ~28px row; lead name in Title sans, all data columns in mono with tabular numerals; hairline divider, no zebra, hover = surface-sunken.",
+      "description": "The signature surface. Dense ~28px row; lead name in Title sans, all data columns in the same Inter sans with tabular numerals; hairline divider, no zebra, hover = surface-sunken.",
       "html": "<table class=\"ds-table\"><thead><tr><th>Name</th><th>E-Mail</th><th>Last Touch</th><th>Wiedervorlage</th></tr></thead><tbody><tr><td class=\"ds-cell-name\">Mara Vogt</td><td class=\"ds-cell-data\">mara@vogt.io</td><td class=\"ds-cell-data\">16.06.2026 09:12</td><td class=\"ds-cell-data ds-overdue\">14.06.2026</td></tr><tr><td class=\"ds-cell-name\">Jonas Reicher</td><td class=\"ds-cell-data\">j.reicher@acme.co</td><td class=\"ds-cell-data\">17.06.2026 18:40</td><td class=\"ds-cell-data ds-muted\">—</td></tr></tbody></table>",
-      "css": ".ds-table { width: 100%; border-collapse: collapse; background: oklch(0.975 0 0); border: 1px solid oklch(0.90 0 0); border-radius: 4px; overflow: hidden; text-align: left; } .ds-table thead { background: oklch(0.945 0 0); } .ds-table th { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.47 0.012 245); padding: 6px 12px; border-bottom: 1px solid oklch(0.90 0 0); } .ds-table td { padding: 6px 12px; border-bottom: 1px solid oklch(0.93 0 0); } .ds-table tbody tr:last-child td { border-bottom: none; } .ds-table tbody tr:hover { background: oklch(0.945 0 0); } .ds-cell-name { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); } .ds-cell-data { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 0.8125rem; font-feature-settings: 'tnum' 1; color: oklch(0.24 0.012 245); } .ds-muted { color: oklch(0.47 0.012 245); } .ds-overdue { color: oklch(0.50 0.18 25); font-weight: 600; }"
+      "css": ".ds-table { width: 100%; border-collapse: collapse; background: oklch(0.975 0 0); border: 1px solid oklch(0.90 0 0); border-radius: 4px; overflow: hidden; text-align: left; } .ds-table thead { background: oklch(0.945 0 0); } .ds-table th { font-family: 'Inter', system-ui, sans-serif; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.47 0.012 245); padding: 6px 12px; border-bottom: 1px solid oklch(0.90 0 0); } .ds-table td { padding: 6px 12px; border-bottom: 1px solid oklch(0.93 0 0); } .ds-table tbody tr:last-child td { border-bottom: none; } .ds-table tbody tr:hover { background: oklch(0.945 0 0); } .ds-cell-name { font-family: 'Inter', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); } .ds-cell-data { font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; color: oklch(0.24 0.012 245); } .ds-muted { color: oklch(0.47 0.012 245); } .ds-overdue { color: oklch(0.50 0.18 25); font-weight: 600; }"
     },
     {
       "name": "Top Navigation",
@@ -217,15 +217,15 @@
       "refersTo": "button-ghost",
       "description": "Top bar: wordmark + links. Muted default, ink hover, active = ink + 600 + 2px accent underline (the only place nav touches the accent).",
       "html": "<nav class=\"ds-nav\"><span class=\"ds-wordmark\">b-leads</span><a class=\"ds-nav-link ds-active\" href=\"#\">Heute</a><a class=\"ds-nav-link\" href=\"#\">Leads</a><a class=\"ds-nav-link\" href=\"#\">Neuer Lead</a></nav>",
-      "css": ".ds-nav { display: flex; align-items: center; gap: 20px; background: oklch(0.975 0 0); border-bottom: 1px solid oklch(0.90 0 0); padding: 10px 16px; font-family: 'IBM Plex Sans', system-ui, sans-serif; } .ds-wordmark { font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); margin-right: 8px; } .ds-nav-link { font-size: 0.875rem; color: oklch(0.47 0.012 245); text-decoration: none; padding-bottom: 2px; transition: color 150ms cubic-bezier(0.25,1,0.5,1); } .ds-nav-link:hover { color: oklch(0.24 0.012 245); } .ds-nav-link.ds-active { color: oklch(0.24 0.012 245); font-weight: 600; border-bottom: 2px solid oklch(0.50 0.17 245); }"
+      "css": ".ds-nav { display: flex; align-items: center; gap: 20px; background: oklch(0.975 0 0); border-bottom: 1px solid oklch(0.90 0 0); padding: 10px 16px; font-family: 'Inter', system-ui, sans-serif; } .ds-wordmark { font-size: 0.9375rem; font-weight: 600; color: oklch(0.24 0.012 245); margin-right: 8px; } .ds-nav-link { font-size: 0.875rem; color: oklch(0.47 0.012 245); text-decoration: none; padding-bottom: 2px; transition: color 150ms cubic-bezier(0.25,1,0.5,1); } .ds-nav-link:hover { color: oklch(0.24 0.012 245); } .ds-nav-link.ds-active { color: oklch(0.24 0.012 245); font-weight: 600; border-bottom: 2px solid oklch(0.50 0.17 245); }"
     }
   ],
   "narrative": {
     "northStar": "The Operator's Console",
-    "overview": "b-leads is a single-person cockpit for running cold outreach. It is not a product being sold; it is a workbench the operator returns to every day to scan the state of every lead, act on the right ones, and never lose an overdue follow-up. The whole system optimizes for one thing: the operator reads dense information and acts fast. Density is the point, not a compromise. The visual language is a quiet technical console: a flat, layered neutral surface; proportional sans for labels and prose; and a monospace data layer that carries everything scanned and compared down a column. Color is rationed: an indigo accent on interaction only, six semantic hues on pipeline state only. The system is system-adaptive: a dark console for focused and evening sessions, a pure-white data-desk for bright daytime work.",
+    "overview": "b-leads is a single-person cockpit for running cold outreach. It is not a product being sold; it is a workbench the operator returns to every day to scan the state of every lead, act on the right ones, and never lose an overdue follow-up. The whole system optimizes for one thing: the operator reads dense information and acts fast. Density is the point, not a compromise. The visual language is a quiet technical console: a flat, layered neutral surface and a single humanist sans (Inter) across the whole system, with tabular numerals carrying everything scanned and compared down a column so figures align without a separate monospace family. Color is rationed: an indigo accent on interaction only, six semantic hues on pipeline state only. The system is system-adaptive: a dark console for focused and evening sessions, a pure-white data-desk for bright daytime work.",
     "keyCharacteristics": [
       "Flat, tonally-layered neutral surface; depth by border and tone, not shadow.",
-      "Monospace tabular numerals for all scanned/compared data.",
+      "One humanist sans (Inter) system-wide; tabular numerals for all scanned/compared data.",
       "A single rationed indigo accent for interaction; six semantic hues for state.",
       "Tight density: 14px body, ~28px table rows, small squared status tags.",
       "Dual-mode (dark + light), adapting to ambient light."
@@ -247,8 +247,8 @@
         "section": "colors"
       },
       {
-        "name": "The Mono-for-Data Rule",
-        "body": "If a value is scanned down a column or compared between rows (date, count, email, ID, currency), it is set in IBM Plex Mono with tabular numerals. Prose and labels are Plex Sans.",
+        "name": "The Tabular-Nums-for-Data Rule",
+        "body": "If a value is scanned down a column or compared between rows (date, count, email, ID, currency), it gets font-variant-numeric: tabular-nums. The sans stays Inter; only the digit box is made fixed-width. Mono remains only for code spans in Markdown notes.",
         "section": "typography"
       },
       {
@@ -263,7 +263,7 @@
       }
     ],
     "dos": [
-      "Do set every scanned/compared value (dates, counts, emails, IDs, follow-ups) in IBM Plex Mono with tabular numerals.",
+      "Do set every scanned/compared value (dates, counts, emails, IDs, follow-ups) in Inter with tabular numerals (font-variant-numeric: tabular-nums).",
       "Do keep Console Indigo for interaction only - primary action, selection, focus, active nav, links - at <=10% of any screen.",
       "Do convey depth with tone (bg -> surface -> surface-sunken) and 1px borders; keep resting surfaces flat.",
       "Do pair every status/urgency color with weight or a text label, so state reads without relying on hue.",
@@ -279,7 +279,7 @@
       "Don't put shadows on resting cards, rows, panels, or buttons. Shadows are for overlays and focus only.",
       "Don't use border-left/border-right > 1px as a colored accent stripe.",
       "Don't use gradient text, background-clip: text, or decorative glassmorphism.",
-      "Don't set data in proportional sans or prose in mono; don't use fluid clamp() type sizes.",
+      "Don't drop tabular numerals on scanned/compared columns; don't use mono for anything but Markdown code spans; don't use fluid clamp() type sizes.",
       "Don't revert to undifferentiated default-Tailwind gray (bg-gray-50 / text-gray-900 with no tokens)."
     ]
   }

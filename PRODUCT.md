@@ -29,10 +29,11 @@ between them and the data.
 ## Brand Personality
 
 A power tool, not a product demo. Three words: **dense, precise, fast.** It
-reads like a TUI / terminal client — high data-ink ratio, monospace for the
-things that are scanned and compared (IDs, dates, counts, emails), compact rows,
-keyboard-forward. Confident and quiet: it trusts the user to read dense
-information and gets out of the way. Tasteful polish is welcome (state
+reads like a polished operator's workbench — high data-ink ratio, tabular
+numerals on every scanned and compared column (IDs, dates, counts, emails), a
+single humanist sans across the whole system, compact rows, keyboard-forward.
+Confident and quiet: it trusts the user to read dense information and gets out
+of the way. Tasteful polish is welcome (state
 transitions, hover feedback, well-judged micro-interactions) but never
 decorative — every pixel earns its place by serving the scan.
 
@@ -52,9 +53,9 @@ decorative — every pixel earns its place by serving the scan.
 1. **Data-ink over chrome.** Every element justifies itself by serving the
    scan. Strip borders, padding, and decoration that don't help the user read
    the data faster. When in doubt, remove it.
-2. **Scannable by alignment and type.** Monospace and tabular numerals for the
-   things that are compared down a column (dates, counts, emails, IDs); a clean
-   sans for prose and labels. Alignment does the work a card border would.
+2. **Scannable by alignment and type.** Tabular numerals for the things that are
+   compared down a column (dates, counts, emails, IDs), set in the same humanist
+   sans as prose and labels. Alignment does the work a card border would.
 3. **The right lead at a glance.** Overdue / due-today / future follow-ups,
    pipeline state, and last-touch must be legible without clicking. Status and
    urgency are encoded in color and weight, used sparingly so they actually pop.

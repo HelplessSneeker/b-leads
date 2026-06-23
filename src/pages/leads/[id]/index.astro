@@ -147,7 +147,7 @@ function followUpClass(value: Date | null): string {
 
   <section class="mt-8 max-w-xl">
     <h2 class="text-[1.125rem] font-semibold text-ink">
-      Aktivitäten <span class="font-mono text-base text-muted">({leadActivities.length})</span>
+      Aktivitäten <span class="tabular-nums text-base text-muted">({leadActivities.length})</span>
     </h2>
     <ActivityForm leadId={lead.id} fieldErrors={activityErrors} submitted={submitted} />
     <ActivityTimeline

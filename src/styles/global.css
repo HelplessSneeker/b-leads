@@ -1,11 +1,10 @@
-/* IBM Plex superfamily, self-hosted (offline-friendly for a Tailscale-only tool).
-   Sans 400/500/600 = body / data-weight fallback / titles+labels.
-   Mono 400/500     = the data layer (450 spec ≈ 500 static). */
-@import "@fontsource/ibm-plex-sans/400.css";
-@import "@fontsource/ibm-plex-sans/500.css";
-@import "@fontsource/ibm-plex-sans/600.css";
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
+/* Inter, self-hosted (offline-friendly for a Tailscale-only tool).
+   400/500/600 = body / data + medium emphasis / titles+labels.
+   Single humanist sans for the whole system; data columns align via
+   font-variant-numeric: tabular-nums, not a separate mono family. */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
 @import "tailwindcss";
 
 /* The `dark:` variant follows the OS (system-adaptive console, per DESIGN.md).
@@ -95,38 +94,38 @@
     --accent-text: oklch(0.8 0.13 245);
 
     --danger: oklch(0.78 0.15 25);
-    --danger-bg: oklch(0.78 0.15 25 / 0.10);
+    --danger-bg: oklch(0.78 0.15 25 / 0.1);
     --danger-border: oklch(0.78 0.15 25 / 0.4);
     --warning: oklch(0.83 0.11 72);
     --success: oklch(0.8 0.12 150);
-    --success-bg: oklch(0.8 0.12 150 / 0.10);
+    --success-bg: oklch(0.8 0.12 150 / 0.1);
     --success-border: oklch(0.8 0.12 150 / 0.4);
 
     --tag-new-fg: oklch(0.84 0 0);
     --tag-new-bg: oklch(1 0 0 / 0.08);
     --tag-contacted-fg: oklch(0.82 0.1 225);
-    --tag-contacted-bg: oklch(0.82 0.1 225 / 0.10);
+    --tag-contacted-bg: oklch(0.82 0.1 225 / 0.1);
     --tag-replied-fg: oklch(0.82 0.12 295);
-    --tag-replied-bg: oklch(0.82 0.12 295 / 0.10);
+    --tag-replied-bg: oklch(0.82 0.12 295 / 0.1);
     --tag-qualified-fg: oklch(0.83 0.11 72);
-    --tag-qualified-bg: oklch(0.83 0.11 72 / 0.10);
+    --tag-qualified-bg: oklch(0.83 0.11 72 / 0.1);
     --tag-won-fg: oklch(0.8 0.12 150);
-    --tag-won-bg: oklch(0.8 0.12 150 / 0.10);
+    --tag-won-bg: oklch(0.8 0.12 150 / 0.1);
     --tag-lost-fg: oklch(0.78 0.15 25);
-    --tag-lost-bg: oklch(0.78 0.15 25 / 0.10);
+    --tag-lost-bg: oklch(0.78 0.15 25 / 0.1);
 
     --tag-act-emailsent-fg: oklch(0.82 0.1 225);
-    --tag-act-emailsent-bg: oklch(0.82 0.1 225 / 0.10);
+    --tag-act-emailsent-bg: oklch(0.82 0.1 225 / 0.1);
     --tag-act-emailrecv-fg: oklch(0.82 0.09 205);
-    --tag-act-emailrecv-bg: oklch(0.82 0.09 205 / 0.10);
+    --tag-act-emailrecv-bg: oklch(0.82 0.09 205 / 0.1);
     --tag-act-lisent-fg: oklch(0.82 0.12 295);
-    --tag-act-lisent-bg: oklch(0.82 0.12 295 / 0.10);
+    --tag-act-lisent-bg: oklch(0.82 0.12 295 / 0.1);
     --tag-act-lirecv-fg: oklch(0.82 0.12 320);
-    --tag-act-lirecv-bg: oklch(0.82 0.12 320 / 0.10);
+    --tag-act-lirecv-bg: oklch(0.82 0.12 320 / 0.1);
     --tag-act-call-fg: oklch(0.8 0.12 150);
-    --tag-act-call-bg: oklch(0.8 0.12 150 / 0.10);
+    --tag-act-call-bg: oklch(0.8 0.12 150 / 0.1);
     --tag-act-meeting-fg: oklch(0.83 0.11 72);
-    --tag-act-meeting-bg: oklch(0.83 0.11 72 / 0.10);
+    --tag-act-meeting-bg: oklch(0.83 0.11 72 / 0.1);
     --tag-act-note-fg: oklch(0.84 0 0);
     --tag-act-note-bg: oklch(1 0 0 / 0.08);
 
@@ -154,8 +153,10 @@
   --color-success-bg: var(--success-bg);
   --color-success-border: var(--success-border);
 
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Inter", system-ui, sans-serif;
+  /* System mono — used only for code spans in rendered Markdown notes, never the
+     data layer (that aligns via tabular-nums on the sans). */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @layer base {
@@ -382,10 +383,10 @@
     color: var(--muted);
   }
 
-  /* Data layer: anything scanned/compared down a column. Mono + tabular nums. */
+  /* Data layer: anything scanned/compared down a column. Tabular numerals on
+     the body sans (Inter) — the figures align in a fixed-width box without the
+     terminal look of a separate mono family. Size + family inherit from body. */
   .data {
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
   }
 

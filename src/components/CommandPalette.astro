@@ -478,6 +478,20 @@ const shortcuts: { keys: string[]; label: string }[] = [
       statusOptions[next]?.focus();
     });
     statusForm?.addEventListener('submit', () => statusDialog?.close());
+    // Light dismiss: clicking the backdrop closes. When the dialog fills the
+    // viewport, the empty area around the panel is the dialog element itself,
+    // so target === dialog means a backdrop click. Guard with the pointerdown
+    // target so a drag that starts inside the panel and ends outside (text
+    // select) doesn't close it.
+    let statusPointerDownTarget: EventTarget | null = null;
+    statusDialog?.addEventListener('pointerdown', (e) => {
+      statusPointerDownTarget = e.target;
+    });
+    statusDialog?.addEventListener('click', (e) => {
+      if (e.target === statusDialog && statusPointerDownTarget === statusDialog) {
+        statusDialog.close();
+      }
+    });
 
     const isTypingContext = (el: EventTarget | null): boolean => {
       const node = el as HTMLElement | null;
