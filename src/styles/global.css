@@ -299,6 +299,32 @@
     color: var(--tag-act-note-fg);
   }
 
+  /* Timeline node dots — filled with the saturated activity-hue (the chip's `fg`
+     token), not the pale `bg` tint the .tag-act-* chips use, so the dot stays
+     clearly visible on the page surface in both themes. State/type signal only,
+     never the indigo interaction accent. */
+  .act-dot-email_sent {
+    background: var(--tag-act-emailsent-fg);
+  }
+  .act-dot-email_received {
+    background: var(--tag-act-emailrecv-fg);
+  }
+  .act-dot-linkedin_sent {
+    background: var(--tag-act-lisent-fg);
+  }
+  .act-dot-linkedin_received {
+    background: var(--tag-act-lirecv-fg);
+  }
+  .act-dot-call {
+    background: var(--tag-act-call-fg);
+  }
+  .act-dot-meeting {
+    background: var(--tag-act-meeting-fg);
+  }
+  .act-dot-note {
+    background: var(--tag-act-note-fg);
+  }
+
   /* Button vocabulary. One primary (filled indigo) per view; the rest secondary
      or ghost. 3px radius, compact, 150ms feedback. */
   .btn {
