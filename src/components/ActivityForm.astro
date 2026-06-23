@@ -7,75 +7,197 @@ interface Props {
   leadId: string;
   fieldErrors?: Record<string, string[] | undefined>;
   submitted: FormData | null;
+  // Re-open + prefill the dialog on the server after a validation error.
+  open: boolean;
+  mode: 'create' | 'edit';
+  editId: string | null;
 }
 
-const { leadId, fieldErrors, submitted } = Astro.props;
+const { leadId, fieldErrors, submitted, open, mode, editId } = Astro.props;
+const isEdit = mode === 'edit';
 
+// Repopulate from the failed submission (create + edit post the same field names,
+// so a single helper covers both modes).
 const value = (key: string, fallback: string) => {
   const v = submitted?.get(key);
   return typeof v === 'string' ? v : fallback;
 };
-
-// A "now" default for the datetime-local input.
-const pad = (n: number) => String(n).padStart(2, '0');
-const d = new Date();
-const nowLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const selectedType = value('type', 'email_sent');
+const bodyError = fieldErrors?.body?.[0];
 
 const fieldClass = 'field mt-1';
 const labelClass = 'block text-sm font-medium text-ink';
-const errorClass = 'mt-1 text-sm text-danger';
 ---
 
-<form
-  method="POST"
-  action={actions.createActivity}
-  class="mt-4 space-y-3 rounded-sm border border-border bg-surface p-4"
->
-  <input type="hidden" name="leadId" value={leadId} />
-  <h3 class="text-sm font-semibold text-ink">Aktivität hinzufügen</h3>
+{/* One mode-aware dialog for create + edit. Reuses the shared `.cmdk` overlay
+    vocabulary (CommandPalette.astro). NOT transition:persist'd — it must re-render
+    fresh so server-prefilled values/errors survive a validation round-trip. The
+    create/edit switch is the form `action` (server-set for the no-JS error reopen,
+    client-set when opening live). */}
+<dialog id="activity-dialog" class="cmdk" aria-label="Aktivität" data-initial-open={open ? '' : undefined}>
+  <div class="cmdk-panel cmdk-panel--form">
+    <p class="status-title" data-activity-title>
+      {isEdit ? 'Aktivität bearbeiten' : 'Aktivität hinzufügen'}
+    </p>
+    <form
+      method="POST"
+      action={isEdit ? actions.updateActivity : actions.createActivity}
+      data-activity-form
+      data-action-create={actions.createActivity}
+      data-action-update={actions.updateActivity}
+      class="space-y-3 p-4"
+    >
+      {/* Both hidden inputs are always present; the unused one is dropped by the
+          action's zod schema (updateActivity ignores leadId, createActivity ignores id). */}
+      <input type="hidden" name="leadId" value={leadId} />
+      <input type="hidden" name="id" value={isEdit ? (editId ?? '') : ''} data-activity-id />
 
-  <div class="flex flex-wrap gap-3">
-    <div class="flex-1">
-      <label class={labelClass} for="type">Typ</label>
-      <select id="type" name="type" class={fieldClass}>
-        {
-          ACTIVITY_TYPES.map((t) => (
-            <option value={t} selected={t === selectedType}>
-              {ACTIVITY_TYPE_LABELS[t]}
-            </option>
-          ))
-        }
-      </select>
-    </div>
-    <div class="flex-1">
-      <label class={labelClass} for="occurredAt">Zeitpunkt</label>
-      <input
-        id="occurredAt"
-        name="occurredAt"
-        type="datetime-local"
-        value={value('occurredAt', nowLocal)}
-        class={fieldClass}
-      />
-    </div>
+      <div class="flex flex-wrap gap-3">
+        <div class="flex-1">
+          <label class={labelClass} for="ad-type">Typ</label>
+          <select id="ad-type" name="type" class={fieldClass} data-activity-field-type>
+            {
+              ACTIVITY_TYPES.map((t) => (
+                <option value={t} selected={t === selectedType}>
+                  {ACTIVITY_TYPE_LABELS[t]}
+                </option>
+              ))
+            }
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class={labelClass} for="ad-occurredAt">Zeitpunkt</label>
+          <input
+            id="ad-occurredAt"
+            name="occurredAt"
+            type="datetime-local"
+            value={value('occurredAt', '')}
+            class={fieldClass}
+            data-activity-field-occurred
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class={labelClass} for="ad-subject">Betreff (optional)</label>
+        <input
+          id="ad-subject"
+          name="subject"
+          type="text"
+          value={value('subject', '')}
+          class={fieldClass}
+          data-activity-field-subject
+        />
+      </div>
+
+      <div>
+        <label class={labelClass} for="ad-body">Inhalt</label>
+        <textarea id="ad-body" name="body" rows="4" class={fieldClass} data-activity-field-body
+          >{value('body', '')}</textarea
+        >
+        <p class="mt-1 text-sm text-danger" data-activity-body-error hidden={!bodyError}>{bodyError}</p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" class="btn btn-secondary" data-activity-cancel>Abbrechen</button>
+        <button type="submit" class="btn btn-primary" data-activity-submit>
+          {isEdit ? 'Speichern' : 'Hinzufügen'}
+        </button>
+      </div>
+    </form>
   </div>
+</dialog>
 
-  <div>
-    <label class={labelClass} for="subject">Betreff (optional)</label>
-    <input
-      id="subject"
-      name="subject"
-      type="text"
-      value={value('subject', '')}
-      class={fieldClass}
-    />
-  </div>
+<script>
+  type Dialog = HTMLDialogElement;
 
-  <div>
-    <label class={labelClass} for="body">Inhalt</label>
-    <textarea id="body" name="body" rows="3" class={fieldClass}>{value('body', '')}</textarea>
-    {fieldErrors?.body && <p class={errorClass}>{fieldErrors.body[0]}</p>}
-  </div>
+  const pad = (n: number) => String(n).padStart(2, '0');
+  // A fresh client-side "now" for new entries (avoids a stale server-rendered now).
+  const nowLocal = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
 
-  <button type="submit" class="btn btn-primary">Hinzufügen</button>
-</form>
+  // The dialog and its triggers live inside the swapped <main>, so (re)bind on every
+  // view-transition page load rather than once.
+  const setupActivityDialog = () => {
+    const dialog = document.getElementById('activity-dialog') as Dialog | null;
+    const form = dialog?.querySelector<HTMLFormElement>('[data-activity-form]') ?? null;
+    if (!dialog || !form) return;
+
+    const title = dialog.querySelector<HTMLElement>('[data-activity-title]');
+    const idInput = dialog.querySelector<HTMLInputElement>('[data-activity-id]');
+    const typeField = dialog.querySelector<HTMLSelectElement>('[data-activity-field-type]');
+    const occurredField = dialog.querySelector<HTMLInputElement>('[data-activity-field-occurred]');
+    const subjectField = dialog.querySelector<HTMLInputElement>('[data-activity-field-subject]');
+    const bodyField = dialog.querySelector<HTMLTextAreaElement>('[data-activity-field-body]');
+    const bodyError = dialog.querySelector<HTMLElement>('[data-activity-body-error]');
+    const submitBtn = dialog.querySelector<HTMLButtonElement>('[data-activity-submit]');
+    const cancelBtn = dialog.querySelector<HTMLButtonElement>('[data-activity-cancel]');
+
+    const actionCreate = form.dataset.actionCreate ?? '';
+    const actionUpdate = form.dataset.actionUpdate ?? '';
+
+    const clearBodyError = () => {
+      if (!bodyError) return;
+      bodyError.hidden = true;
+      bodyError.textContent = '';
+    };
+
+    const openCreate = () => {
+      if (dialog.open) return;
+      form.setAttribute('action', actionCreate);
+      if (idInput) idInput.value = '';
+      if (typeField) typeField.value = 'email_sent';
+      if (subjectField) subjectField.value = '';
+      if (bodyField) bodyField.value = '';
+      if (occurredField) occurredField.value = nowLocal();
+      if (title) title.textContent = 'Aktivität hinzufügen';
+      if (submitBtn) submitBtn.textContent = 'Hinzufügen';
+      clearBodyError();
+      dialog.showModal();
+      typeField?.focus();
+    };
+
+    const openEdit = (data: DOMStringMap) => {
+      if (dialog.open) return;
+      form.setAttribute('action', actionUpdate);
+      if (idInput) idInput.value = data.id ?? '';
+      if (typeField) typeField.value = data.type ?? 'email_sent';
+      if (subjectField) subjectField.value = data.subject ?? '';
+      if (bodyField) bodyField.value = data.body ?? '';
+      if (occurredField) occurredField.value = data.occurred ?? nowLocal();
+      if (title) title.textContent = 'Aktivität bearbeiten';
+      if (submitBtn) submitBtn.textContent = 'Speichern';
+      clearBodyError();
+      dialog.showModal();
+      typeField?.focus();
+    };
+
+    for (const btn of document.querySelectorAll<HTMLElement>('[data-activity-add]')) {
+      btn.addEventListener('click', openCreate);
+    }
+    for (const btn of document.querySelectorAll<HTMLElement>('[data-activity-edit]')) {
+      btn.addEventListener('click', () => openEdit(btn.dataset));
+    }
+
+    cancelBtn?.addEventListener('click', () => dialog.close());
+
+    // Light dismiss: backdrop click closes, guarded by the pointerdown target so a
+    // drag that starts inside the panel and ends on the backdrop (text select)
+    // doesn't close it. (Same pattern as the status picker in CommandPalette.astro.)
+    let pointerDownTarget: EventTarget | null = null;
+    dialog.addEventListener('pointerdown', (e) => {
+      pointerDownTarget = e.target;
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog && pointerDownTarget === dialog) dialog.close();
+    });
+
+    // Validation error re-render: the server already filled the right mode + values
+    // + error, so just reopen.
+    if (dialog.hasAttribute('data-initial-open') && !dialog.open) dialog.showModal();
+  };
+
+  document.addEventListener('astro:page-load', setupActivityDialog);
+</script>

@@ -24,3 +24,16 @@ export const ACTIVITY_TYPE_CLASSES: Record<ActivityType, string> = {
   meeting: 'tag-act-meeting',
   note: 'tag-act-note',
 };
+
+// Communication direction for the timeline arrow: outbound (we reached out),
+// inbound (they reached us), or none for two-way / internal entries. Muted glyph
+// only — never the interaction accent.
+export const ACTIVITY_DIRECTION: Record<ActivityType, 'out' | 'in' | null> = {
+  email_sent: 'out',
+  email_received: 'in',
+  linkedin_sent: 'out',
+  linkedin_received: 'in',
+  call: null,
+  meeting: null,
+  note: null,
+};

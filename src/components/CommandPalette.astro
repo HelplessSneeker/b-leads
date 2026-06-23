@@ -149,8 +149,15 @@ const shortcuts: { keys: string[]; label: string }[] = [
   </div>
 </dialog>
 
-<style>
-  /* Native <dialog> escapes every stacking/overflow context (skill guidance:
+<style is:global>
+  /* The .cmdk overlay vocabulary is shared infrastructure: the command palette,
+     help sheet, and status picker here, plus the activity dialog on the lead
+     detail page (src/components/ActivityForm.astro) all reuse it. Kept global (not
+     component-scoped) so a second component can render `.cmdk` and inherit the
+     same backdrop / entrance / reduced-motion behaviour. Selectors are all
+     dialog-specific class names, so global scope is side-effect free.
+
+     Native <dialog> escapes every stacking/overflow context (skill guidance:
      don't trap an overlay inside an overflow:auto container). */
   .cmdk {
     margin: 0;
@@ -321,6 +328,13 @@ const shortcuts: { keys: string[]; label: string }[] = [
      scroll/arrow the way the old inline auto-submitting <select> could. */
   .cmdk-panel--status {
     width: min(22rem, calc(100vw - 2rem));
+  }
+
+  /* Activity create/edit form — same overlay vocabulary, wider to fit the fields.
+     Unlike the palette/status dialogs this one is NOT transition:persist'd: it must
+     re-render fresh to carry server-prefilled values and validation errors. */
+  .cmdk-panel--form {
+    width: min(32rem, calc(100vw - 2rem));
   }
   .status-title {
     padding: 12px 14px;

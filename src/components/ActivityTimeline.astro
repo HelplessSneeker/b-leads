@@ -1,141 +1,128 @@
 ---
 import { actions } from 'astro:actions';
-import { ACTIVITY_TYPE_CLASSES, ACTIVITY_TYPE_LABELS } from '~/components/activityType';
-import { ACTIVITY_TYPES, type Activity } from '~/db/schema';
-import { formatDateTime } from '~/lib/date';
+import {
+  ACTIVITY_DIRECTION,
+  ACTIVITY_TYPE_CLASSES,
+  ACTIVITY_TYPE_LABELS,
+} from '~/components/activityType';
+import type { Activity } from '~/db/schema';
+import { formatDate, formatDateTime, isoDateVienna } from '~/lib/date';
 
 interface Props {
   activities: Activity[];
-  editingId: string | null;
-  fieldErrors?: Record<string, string[] | undefined>;
-  submitted: FormData | null;
 }
 
-const { activities, editingId, fieldErrors, submitted } = Astro.props;
+const { activities } = Astro.props;
 
-// Repopulate the inline edit form from the failed submission, else the stored value.
-const value = (key: string, fallback: string) => {
-  const v = submitted?.get(key);
-  return typeof v === 'string' ? v : fallback;
-};
-
-// datetime-local needs a `yyyy-MM-ddTHH:mm` string in local time.
+// datetime-local needs a `yyyy-MM-ddTHH:mm` string in local time — carried on the
+// edit trigger so the dialog can prefill the field without re-deriving it.
 const pad = (n: number) => String(n).padStart(2, '0');
 const toLocalInput = (d: Date) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-const fieldClass = 'field mt-1';
-const labelClass = 'block text-sm font-medium text-ink';
-const errorClass = 'mt-1 text-sm text-danger';
+// Group consecutive entries by Vienna calendar day. The input is already sorted
+// newest-first, so a single pass keeps both groups and entries newest-first.
+const todayIso = isoDateVienna(new Date());
+const yesterdayIso = isoDateVienna(new Date(Date.now() - 24 * 60 * 60 * 1000));
+const dayLabel = (iso: string, sample: Date) => {
+  if (iso === todayIso) return 'Heute';
+  if (iso === yesterdayIso) return 'Gestern';
+  return formatDate(sample);
+};
+
+type DayGroup = { iso: string; label: string; items: Activity[] };
+const groups: DayGroup[] = [];
+for (const activity of activities) {
+  const iso = isoDateVienna(activity.occurredAt);
+  const last = groups.at(-1);
+  if (!last || last.iso !== iso) {
+    groups.push({ iso, label: dayLabel(iso, activity.occurredAt), items: [activity] });
+  } else {
+    last.items.push(activity);
+  }
+}
+
+const subheadClass = 'mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted';
+// Row actions: hidden until hover/focus on a fine pointer, always shown on touch.
+const actionsClass =
+  'flex shrink-0 items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100';
 ---
 
 {
   activities.length === 0 ? (
     <p class="mt-4 rounded-sm border border-dashed border-border p-6 text-sm text-muted">
-      Noch keine Aktivitäten — der erste Eintrag über das Formular oben startet den Verlauf.
+      Noch keine Aktivitäten — der erste Eintrag über »Aktivität hinzufügen« startet den Verlauf.
     </p>
   ) : (
-    <ol class="mt-4 space-y-3">
-      {activities.map((activity) =>
-        editingId === activity.id ? (
-          <li class="rounded-sm border border-border bg-surface p-4 ring-2 ring-accent">
-            <form method="POST" action={actions.updateActivity} class="space-y-3">
-              <input type="hidden" name="id" value={activity.id} />
-              <div class="flex flex-wrap gap-3">
-                <div class="flex-1">
-                  <label class={labelClass} for={`type-${activity.id}`}>
-                    Typ
-                  </label>
-                  <select id={`type-${activity.id}`} name="type" class={fieldClass}>
-                    {ACTIVITY_TYPES.map((t) => (
-                      <option value={t} selected={t === value('type', activity.type)}>
-                        {ACTIVITY_TYPE_LABELS[t]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div class="flex-1">
-                  <label class={labelClass} for={`occurredAt-${activity.id}`}>
-                    Zeitpunkt
-                  </label>
-                  <input
-                    id={`occurredAt-${activity.id}`}
-                    name="occurredAt"
-                    type="datetime-local"
-                    value={value('occurredAt', toLocalInput(activity.occurredAt))}
-                    class={fieldClass}
+    <div class="mt-5 space-y-7">
+      {groups.map((group) => (
+        <section>
+          <h3 class={subheadClass}>{group.label}</h3>
+          {/* The rail is the left border of the list; each entry hangs a colored
+              node off it. Node hue is the activity-type tag colour (state), never
+              the indigo interaction accent. */}
+          <ol class="ml-1 space-y-5 border-l border-border">
+            {group.items.map((activity) => {
+              const direction = ACTIVITY_DIRECTION[activity.type];
+              return (
+                <li class="group relative pl-6">
+                  <span
+                    class={`absolute left-0 top-1.5 -ml-[5px] h-2.5 w-2.5 rounded-full ring-2 ring-bg ${ACTIVITY_TYPE_CLASSES[activity.type]}`}
+                    aria-hidden="true"
                   />
-                </div>
-              </div>
-              <div>
-                <label class={labelClass} for={`subject-${activity.id}`}>
-                  Betreff (optional)
-                </label>
-                <input
-                  id={`subject-${activity.id}`}
-                  name="subject"
-                  type="text"
-                  value={value('subject', activity.subject ?? '')}
-                  class={fieldClass}
-                />
-              </div>
-              <div>
-                <label class={labelClass} for={`body-${activity.id}`}>
-                  Inhalt
-                </label>
-                <textarea id={`body-${activity.id}`} name="body" rows="3" class={fieldClass}>{value('body', activity.body)}</textarea>
-                {fieldErrors?.body && <p class={errorClass}>{fieldErrors.body[0]}</p>}
-              </div>
-              <div class="flex items-center gap-3">
-                <button type="submit" class="btn btn-primary">Speichern</button>
-                <a
-                  href={`/leads/${activity.leadId}`}
-                  class="text-sm text-muted hover:text-ink"
-                >
-                  Abbrechen
-                </a>
-              </div>
-            </form>
-          </li>
-        ) : (
-          <li class="rounded-sm border border-border bg-surface p-4">
-            <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-2">
-                <span class={`tag ${ACTIVITY_TYPE_CLASSES[activity.type]}`}>
-                  {ACTIVITY_TYPE_LABELS[activity.type]}
-                </span>
-                <span class="data text-muted">{formatDateTime(activity.occurredAt)}</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <a
-                  href={`/leads/${activity.leadId}?edit=${activity.id}`}
-                  class="text-xs font-medium text-muted hover:text-ink"
-                >
-                  Bearbeiten
-                </a>
-                <form
-                  method="POST"
-                  action={actions.deleteActivity}
-                  onsubmit="return confirm('Aktivität wirklich löschen?')"
-                >
-                  <input type="hidden" name="id" value={activity.id} />
-                  <button
-                    type="submit"
-                    class="text-xs font-medium text-danger hover:underline"
-                    aria-label="Aktivität löschen"
-                  >
-                    Löschen
-                  </button>
-                </form>
-              </div>
-            </div>
-            {activity.subject && (
-              <p class="mt-2 break-words text-sm font-medium text-ink">{activity.subject}</p>
-            )}
-            <p class="mt-1 whitespace-pre-wrap break-words text-sm text-ink">{activity.body}</p>
-          </li>
-        ),
-      )}
-    </ol>
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
+                        <span>{ACTIVITY_TYPE_LABELS[activity.type]}</span>
+                        {direction && (
+                          <span aria-hidden="true">{direction === 'out' ? '→' : '←'}</span>
+                        )}
+                        <span class="data">{formatDateTime(activity.occurredAt)}</span>
+                      </div>
+                      {activity.subject && (
+                        <p class="mt-1 break-words text-sm font-medium text-ink">
+                          {activity.subject}
+                        </p>
+                      )}
+                      <p class="mt-0.5 whitespace-pre-wrap break-words text-sm text-ink">
+                        {activity.body}
+                      </p>
+                    </div>
+                    <div class={actionsClass}>
+                      <button
+                        type="button"
+                        data-activity-edit
+                        data-id={activity.id}
+                        data-type={activity.type}
+                        data-subject={activity.subject ?? ''}
+                        data-body={activity.body}
+                        data-occurred={toLocalInput(activity.occurredAt)}
+                        class="text-xs font-medium text-muted hover:text-ink"
+                      >
+                        Bearbeiten
+                      </button>
+                      <form
+                        method="POST"
+                        action={actions.deleteActivity}
+                        onsubmit="return confirm('Aktivität wirklich löschen?')"
+                      >
+                        <input type="hidden" name="id" value={activity.id} />
+                        <button
+                          type="submit"
+                          class="text-xs font-medium text-danger hover:underline"
+                          aria-label="Aktivität löschen"
+                        >
+                          Löschen
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))}
+    </div>
   )
 }

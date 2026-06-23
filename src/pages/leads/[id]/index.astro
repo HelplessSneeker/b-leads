@@ -53,7 +53,13 @@ const editActivityErrors =
   updateActivityResult && isInputError(updateActivityResult.error)
     ? updateActivityResult.error.fields
     : undefined;
-const editingId = Astro.url.searchParams.get('edit');
+
+// A failed create/edit doesn't redirect; reopen the dialog in the matching mode with
+// the submitted values + error. Mode is decided by which action errored.
+const dialogOpen = Boolean(activityErrors || editActivityErrors);
+const dialogMode: 'create' | 'edit' = editActivityErrors ? 'edit' : 'create';
+const dialogEditId = dialogMode === 'edit' ? (submitted?.get('id')?.toString() ?? null) : null;
+const dialogErrors = editActivityErrors ?? activityErrors;
 
 // Calendar-date comparison in the app timezone (matches the leads list).
 const todayIso = isoDateVienna(new Date());
@@ -89,72 +95,85 @@ function followUpClass(value: Date | null): string {
     </div>
   </div>
 
-  <section class="mt-8 max-w-xl rounded-sm border border-border bg-surface p-4">
-    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 break-words text-sm">
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Firma</dt>
-        <dd class="mt-0.5 text-ink">{lead.company ?? '—'}</dd>
+  <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+    {/* Activities: the working column — left and wide on lg, last on mobile. */}
+    <section class="order-2 lg:order-1 lg:col-span-2">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-[1.125rem] font-semibold text-ink">
+          Aktivitäten <span class="tabular-nums text-base text-muted">({leadActivities.length})</span>
+        </h2>
+        <button type="button" data-activity-add class="btn btn-secondary">Aktivität hinzufügen</button>
       </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Rolle</dt>
-        <dd class="mt-0.5 text-ink">{lead.role ?? '—'}</dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">E-Mail</dt>
-        <dd class="mt-0.5">
-          <a href={`mailto:${lead.email}`} class="data text-accent-text [overflow-wrap:anywhere] hover:underline">{lead.email}</a>
-        </dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Quelle</dt>
-        <dd class="mt-0.5 text-ink">{lead.source}</dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Nächste Aktion</dt>
-        <dd class="mt-0.5 text-ink">{lead.nextAction ?? '—'}</dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Wiedervorlage</dt>
-        <dd class={`mt-0.5 data ${followUpClass(lead.followUpAt)}`}>
-          {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
-        </dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Letzter Kontakt</dt>
-        <dd class="mt-0.5 data text-ink">{lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}</dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Erstellt</dt>
-        <dd class="mt-0.5 data text-ink">{formatDateTime(lead.createdAt)}</dd>
-      </div>
-      <div class="min-w-0">
-        <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Aktualisiert</dt>
-        <dd class="mt-0.5 data text-ink">{formatDateTime(lead.updatedAt)}</dd>
-      </div>
-    </dl>
-  </section>
+      <ActivityTimeline activities={leadActivities} />
+    </section>
 
-  <section class="mt-8 max-w-xl">
-    <h2 class="text-[1.125rem] font-semibold text-ink">Notizen</h2>
-    {
-      lead.notes ? (
-        <div class="notes-rendered mt-2" set:html={renderMarkdown(lead.notes)} />
-      ) : (
-        <p class="mt-2 text-sm italic text-muted">Keine Notizen.</p>
-      )
-    }
-  </section>
+    {/* Reference column: facts + notes, sticky beside the scrolling timeline on lg,
+        first on mobile. */}
+    <aside class="order-1 space-y-8 self-start lg:order-2 lg:sticky lg:top-6">
+      <section class="rounded-sm border border-border bg-surface p-4">
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 break-words text-sm">
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Firma</dt>
+            <dd class="mt-0.5 text-ink">{lead.company ?? '—'}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Rolle</dt>
+            <dd class="mt-0.5 text-ink">{lead.role ?? '—'}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">E-Mail</dt>
+            <dd class="mt-0.5">
+              <a href={`mailto:${lead.email}`} class="data text-accent-text [overflow-wrap:anywhere] hover:underline">{lead.email}</a>
+            </dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Quelle</dt>
+            <dd class="mt-0.5 text-ink">{lead.source}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Nächste Aktion</dt>
+            <dd class="mt-0.5 text-ink">{lead.nextAction ?? '—'}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Wiedervorlage</dt>
+            <dd class={`mt-0.5 data ${followUpClass(lead.followUpAt)}`}>
+              {lead.followUpAt ? formatDate(lead.followUpAt) : '—'}
+            </dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Letzter Kontakt</dt>
+            <dd class="mt-0.5 data text-ink">{lead.lastTouchAt ? formatDateTime(lead.lastTouchAt) : '—'}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Erstellt</dt>
+            <dd class="mt-0.5 data text-ink">{formatDateTime(lead.createdAt)}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">Aktualisiert</dt>
+            <dd class="mt-0.5 data text-ink">{formatDateTime(lead.updatedAt)}</dd>
+          </div>
+        </dl>
+      </section>
 
-  <section class="mt-8 max-w-xl">
-    <h2 class="text-[1.125rem] font-semibold text-ink">
-      Aktivitäten <span class="tabular-nums text-base text-muted">({leadActivities.length})</span>
-    </h2>
-    <ActivityForm leadId={lead.id} fieldErrors={activityErrors} submitted={submitted} />
-    <ActivityTimeline
-      activities={leadActivities}
-      editingId={editingId}
-      fieldErrors={editActivityErrors}
-      submitted={submitted}
-    />
-  </section>
+      <section>
+        <h2 class="text-[1.125rem] font-semibold text-ink">Notizen</h2>
+        {
+          lead.notes ? (
+            <div class="notes-rendered mt-2" set:html={renderMarkdown(lead.notes)} />
+          ) : (
+            <p class="mt-2 text-sm italic text-muted">Keine Notizen.</p>
+          )
+        }
+      </section>
+    </aside>
+  </div>
+
+  <ActivityForm
+    leadId={lead.id}
+    submitted={submitted}
+    fieldErrors={dialogErrors}
+    open={dialogOpen}
+    mode={dialogMode}
+    editId={dialogEditId}
+  />
 </Layout>
