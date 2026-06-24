@@ -17,12 +17,15 @@ const deleteResult = Astro.getActionResult(actions.deleteLead);
 const createActivityResult = Astro.getActionResult(actions.createActivity);
 const updateActivityResult = Astro.getActionResult(actions.updateActivity);
 const deleteActivityResult = Astro.getActionResult(actions.deleteActivity);
+const analyzeActivityResult = Astro.getActionResult(actions.analyzeActivity);
 
 // PRG: redirect after a successful mutation so a reload doesn't resubmit.
 if (deleteResult && !deleteResult.error) return Astro.redirect('/leads', 303);
 if (createActivityResult && !createActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
 if (updateActivityResult && !updateActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
 if (deleteActivityResult && !deleteActivityResult.error) return Astro.redirect(`/leads/${id}`, 303);
+if (analyzeActivityResult && !analyzeActivityResult.error)
+  return Astro.redirect(`/leads/${id}`, 303);
 
 const lead = db.select().from(leads).where(eq(leads.id, id)).get();
 if (!lead) return Astro.rewrite('/404');

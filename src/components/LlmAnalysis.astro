@@ -1,0 +1,102 @@
+---
+import { actions } from 'astro:actions';
+import type { Activity, LlmClassification } from '~/db/schema';
+
+// LLM panel for a single inbound email: a trigger that runs the (mock) provider, the
+// persisted classification as badges, and the reply draft in a locally-editable textarea
+// with a copy button. Mounted only for `email_received` activities (see ActivityTimeline).
+interface Props {
+  activity: Activity;
+}
+
+const { activity } = Astro.props;
+const classification = activity.llmClassification;
+const draft = activity.llmDraft;
+const analysed = Boolean(classification || draft);
+
+const SENTIMENT_LABELS: Record<LlmClassification['sentiment'], string> = {
+  positive: 'Positiv',
+  neutral: 'Neutral',
+  negative: 'Negativ',
+};
+const SENTIMENT_CLASSES: Record<LlmClassification['sentiment'], string> = {
+  positive: 'tag-sentiment-positive',
+  neutral: 'tag-sentiment-neutral',
+  negative: 'tag-sentiment-negative',
+};
+const INTENT_LABELS: Record<LlmClassification['intent'], string> = {
+  interested: 'Interesse',
+  pricing: 'Preis',
+  'not-now': 'Später',
+  no: 'Absage',
+  question: 'Frage',
+  other: 'Sonstiges',
+};
+---
+
+<div class="mt-3 border-t border-border pt-3" data-llm-analysis>
+  {
+    classification && (
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span class={`tag ${SENTIMENT_CLASSES[classification.sentiment]}`}>
+          {SENTIMENT_LABELS[classification.sentiment]}
+        </span>
+        <span class="tag tag-intent">{INTENT_LABELS[classification.intent]}</span>
+        <span class="data text-xs text-muted">
+          {Math.round(classification.confidence * 100)} % Konfidenz
+        </span>
+      </div>
+    )
+  }
+
+  {
+    draft && (
+      <div class="mb-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-muted">
+            Antwortentwurf
+          </span>
+          <button type="button" class="text-xs font-medium text-accent-text hover:underline" data-copy-draft>
+            Kopieren
+          </button>
+        </div>
+        <textarea class="field mt-1 text-sm leading-relaxed" rows="6" data-llm-draft>{draft}</textarea>
+      </div>
+    )
+  }
+
+  <form method="POST" action={actions.analyzeActivity}>
+    <input type="hidden" name="id" value={activity.id} />
+    <button type="submit" class="text-xs font-medium text-accent-text hover:underline">
+      {analysed ? 'Neu analysieren' : 'Klassifizieren / Antwort entwerfen'}
+    </button>
+  </form>
+</div>
+
+<script>
+  // One delegated listener for the whole page; survives view transitions (the module
+  // runs once and the document persists). Copies the current textarea value — including
+  // any local edits — and flashes a confirmation.
+  document.addEventListener('click', async (event) => {
+    const target = event.target as HTMLElement;
+    const button = target.closest<HTMLButtonElement>('[data-copy-draft]');
+    if (!button) return;
+
+    const textarea = button
+      .closest('[data-llm-analysis]')
+      ?.querySelector<HTMLTextAreaElement>('[data-llm-draft]');
+    if (!textarea) return;
+
+    try {
+      await navigator.clipboard.writeText(textarea.value);
+      const previous = button.textContent;
+      button.textContent = 'Kopiert ✓';
+      window.setTimeout(() => {
+        button.textContent = previous;
+      }, 1500);
+    } catch {
+      // Clipboard blocked (no permission / insecure context) — leave the draft selectable.
+      textarea.select();
+    }
+  });
+</script>
