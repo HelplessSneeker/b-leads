@@ -55,11 +55,14 @@ function stripCodeFences(content: string): string {
 }
 
 export class OllamaProvider implements LLMProvider {
+  // Astro/Vite exposes `.env` via import.meta.env; process.env is the fallback
+  // for plain Node contexts (scripts, vitest) and real deploy-set env vars.
   private readonly client = new OpenAI({
-    baseURL: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434/v1',
+    baseURL:
+      import.meta.env.OLLAMA_BASE_URL ?? process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434/v1',
     apiKey: 'ollama',
   });
-  private readonly model = process.env.OLLAMA_MODEL ?? 'qwen2.5:7b';
+  private readonly model = import.meta.env.OLLAMA_MODEL ?? process.env.OLLAMA_MODEL ?? 'qwen2.5:7b';
 
   async classify(mail: Mail): Promise<Classification> {
     const response = await this.client.chat.completions.create({
