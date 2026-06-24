@@ -1,6 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { type Activity, type ActivityType, activities, leads } from '~/db/schema';
+import { type Activity, type ActivityType, activities, type Lead, leads } from '~/db/schema';
+import { getProvider } from '~/lib/llm';
 import { NotFoundError } from './leads';
 
 // Pure CRUD logic for lead activities, separated from the Astro Action layer so it
@@ -116,4 +117,51 @@ function recomputeLastTouch<S extends Record<string, unknown>>(
     .set({ lastTouchAt: latest ? latest.occurredAt : null, updatedAt: new Date() })
     .where(eq(leads.id, leadId))
     .run();
+}
+
+/** Raised when an LLM analysis is requested for an activity that is not an inbound email. */
+export class UnsupportedActivityError extends Error {
+  constructor(message = 'Analyse nur für eingegangene E-Mails verfügbar') {
+    super(message);
+    this.name = 'UnsupportedActivityError';
+  }
+}
+
+/** Compact, single-string lead summary handed to the provider as draft context. The
+ *  MockProvider ignores it, but real providers (S2+) prompt against it — keep it filled. */
+function buildLeadContext(lead: Lead): string {
+  const who = [lead.name, lead.role, lead.company].filter(Boolean).join(', ');
+  const parts = [who, `Status: ${lead.status}`];
+  if (lead.notes) parts.push(`Notizen: ${lead.notes}`);
+  return parts.join(' — ');
+}
+
+/**
+ * Runs the configured LLM provider over an inbound email activity and persists both the
+ * classification and the reply draft onto the activity row. Only `email_received` activities
+ * are eligible; anything else throws `UnsupportedActivityError`. Does not touch lastTouchAt —
+ * analysing an existing entry is not a new touchpoint.
+ */
+export async function analyzeActivity<S extends Record<string, unknown>>(
+  db: ActivitiesDb<S>,
+  input: { id: string },
+): Promise<Activity> {
+  const activity = db.select().from(activities).where(eq(activities.id, input.id)).get();
+  if (!activity) throw new NotFoundError('Aktivität nicht gefunden');
+  if (activity.type !== 'email_received') throw new UnsupportedActivityError();
+
+  const lead = db.select().from(leads).where(eq(leads.id, activity.leadId)).get();
+  if (!lead) throw new NotFoundError();
+
+  const provider = getProvider();
+  const mail = { subject: activity.subject ?? '', body: activity.body };
+  const llmClassification = await provider.classify(mail);
+  const llmDraft = await provider.draftReply(mail, buildLeadContext(lead));
+
+  return db
+    .update(activities)
+    .set({ llmClassification, llmDraft })
+    .where(eq(activities.id, input.id))
+    .returning()
+    .get();
 }

@@ -5,6 +5,7 @@ import {
   ACTIVITY_DOT_CLASSES,
   ACTIVITY_TYPE_LABELS,
 } from '~/components/activityType';
+import LlmAnalysis from '~/components/LlmAnalysis.astro';
 import type { Activity } from '~/db/schema';
 import { formatDate, formatDateTime, isoDateVienna } from '~/lib/date';
 
@@ -117,6 +118,7 @@ const actionsClass =
                       </form>
                     </div>
                   </div>
+                  {activity.type === 'email_received' && <LlmAnalysis activity={activity} />}
                 </li>
               );
             })}

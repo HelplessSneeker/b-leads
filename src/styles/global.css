@@ -299,6 +299,25 @@
     color: var(--tag-act-note-fg);
   }
 
+  /* LLM classification badges. Sentiment reuses the semantic signal tokens (green /
+     neutral / red); intent is a neutral data chip — neither borrows the indigo accent. */
+  .tag-sentiment-positive {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+  .tag-sentiment-neutral {
+    background: var(--surface-sunken);
+    color: var(--muted);
+  }
+  .tag-sentiment-negative {
+    background: var(--danger-bg);
+    color: var(--danger);
+  }
+  .tag-intent {
+    background: var(--surface-sunken);
+    color: var(--ink);
+  }
+
   /* Timeline node dots — filled with the saturated activity-hue (the chip's `fg`
      token), not the pale `bg` tint the .tag-act-* chips use, so the dot stays
      clearly visible on the page surface in both themes. State/type signal only,

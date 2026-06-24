@@ -4,8 +4,10 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/db';
 import { ACTIVITY_TYPES, LEAD_STATUSES, leads } from '~/db/schema';
 import {
+  analyzeActivity as analyzeActivityCore,
   createActivity as createActivityCore,
   deleteActivity as deleteActivityCore,
+  UnsupportedActivityError,
   updateActivity as updateActivityCore,
 } from './activities';
 import {
@@ -27,6 +29,9 @@ function toActionError(err: unknown): never {
   }
   if (err instanceof NotFoundError) {
     throw new ActionError({ code: 'NOT_FOUND', message: err.message });
+  }
+  if (err instanceof UnsupportedActivityError) {
+    throw new ActionError({ code: 'BAD_REQUEST', message: err.message });
   }
   throw err;
 }
@@ -176,6 +181,20 @@ export const server = {
     handler: async (input) => {
       try {
         deleteActivityCore(db, input);
+        return { success: true };
+      } catch (err) {
+        return toActionError(err);
+      }
+    },
+  }),
+
+  // Runs the (mock) LLM over an inbound email and persists classification + draft.
+  analyzeActivity: defineAction({
+    accept: 'form',
+    input: z.object({ id: z.string().uuid() }),
+    handler: async (input) => {
+      try {
+        await analyzeActivityCore(db, input);
         return { success: true };
       } catch (err) {
         return toActionError(err);
