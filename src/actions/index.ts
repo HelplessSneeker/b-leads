@@ -63,6 +63,11 @@ const importRow = z.object({
   notes: z.string().optional(),
 });
 
+// In-flight LLM analyses, keyed by activity id, so `cancelAnalysis` can abort the
+// matching `analyzeActivity` run. Module-level → shared across requests in the single
+// SSR process (same lifetime model as the db singleton).
+const analysisAborters = new Map<string, AbortController>();
+
 export const server = {
   createLead: defineAction({
     accept: 'form',
@@ -188,17 +193,44 @@ export const server = {
     },
   }),
 
-  // Runs the (mock) LLM over an inbound email and persists classification + draft.
+  // Runs the configured LLM over an inbound email and persists classification + draft.
+  // Cancellation: @astrojs/node does not propagate a client disconnect to
+  // request.signal, so a dropped fetch alone won't stop the LLM. Instead each run
+  // registers an AbortController keyed by activity id; the `cancelAnalysis` action
+  // (a separate request fired by the "Abbrechen" button) aborts it, which is wired
+  // through to the provider's OpenAI calls. Single process / single user, so an
+  // in-memory registry is sufficient (mirrors the db singleton).
   analyzeActivity: defineAction({
     accept: 'form',
     input: z.object({ id: z.string().uuid() }),
-    handler: async (input) => {
+    handler: async ({ id }) => {
+      // Supersede any prior in-flight run for the same activity.
+      analysisAborters.get(id)?.abort();
+      const controller = new AbortController();
+      analysisAborters.set(id, controller);
       try {
-        await analyzeActivityCore(db, input);
+        await analyzeActivityCore(db, { id }, controller.signal);
         return { success: true };
       } catch (err) {
+        if (controller.signal.aborted) {
+          throw new ActionError({ code: 'BAD_REQUEST', message: 'Analyse abgebrochen' });
+        }
         return toActionError(err);
+      } finally {
+        // Only clear if a newer run hasn't already replaced ours.
+        if (analysisAborters.get(id) === controller) analysisAborters.delete(id);
       }
+    },
+  }),
+
+  // Aborts an in-flight analyzeActivity run (see the registry note above). JSON-only:
+  // it is invoked from client JS, never as a progressively-enhanced form.
+  cancelAnalysis: defineAction({
+    accept: 'json',
+    input: z.object({ id: z.string().uuid() }),
+    handler: async ({ id }) => {
+      analysisAborters.get(id)?.abort();
+      return { success: true };
     },
   }),
 

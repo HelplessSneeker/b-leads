@@ -140,11 +140,13 @@ function buildLeadContext(lead: Lead): string {
  * Runs the configured LLM provider over an inbound email activity and persists both the
  * classification and the reply draft onto the activity row. Only `email_received` activities
  * are eligible; anything else throws `UnsupportedActivityError`. Does not touch lastTouchAt —
- * analysing an existing entry is not a new touchpoint.
+ * analysing an existing entry is not a new touchpoint. An optional `signal` is forwarded to
+ * the provider so a cancelled client request aborts the in-flight LLM generation.
  */
 export async function analyzeActivity<S extends Record<string, unknown>>(
   db: ActivitiesDb<S>,
   input: { id: string },
+  signal?: AbortSignal,
 ): Promise<Activity> {
   const activity = db.select().from(activities).where(eq(activities.id, input.id)).get();
   if (!activity) throw new NotFoundError('Aktivität nicht gefunden');
@@ -155,8 +157,8 @@ export async function analyzeActivity<S extends Record<string, unknown>>(
 
   const provider = getProvider();
   const mail = { subject: activity.subject ?? '', body: activity.body };
-  const llmClassification = await provider.classify(mail);
-  const llmDraft = await provider.draftReply(mail, buildLeadContext(lead));
+  const llmClassification = await provider.classify(mail, signal);
+  const llmDraft = await provider.draftReply(mail, buildLeadContext(lead), signal);
 
   return db
     .update(activities)

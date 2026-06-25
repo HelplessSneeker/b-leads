@@ -10,7 +10,9 @@ export type { Classification, LLMProvider, Mail } from './provider';
  * Defaults to the mock provider (dev). Real providers are implemented in Phase 3.
  */
 export function getProvider(): LLMProvider {
-  const provider = process.env.LLM_PROVIDER ?? 'mock';
+  // Astro/Vite exposes `.env` via import.meta.env; process.env is the fallback
+  // for plain Node contexts (scripts, vitest) and real deploy-set env vars.
+  const provider = import.meta.env.LLM_PROVIDER ?? process.env.LLM_PROVIDER ?? 'mock';
   switch (provider) {
     case 'ollama':
       return new OllamaProvider();

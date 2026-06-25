@@ -16,6 +16,6 @@ export interface Classification {
  * SDK with a different baseURL + apiKey. See {@link ./index.ts} for selection.
  */
 export interface LLMProvider {
-  classify(mail: Mail): Promise<Classification>;
-  draftReply(mail: Mail, leadContext: string): Promise<string>;
+  classify(mail: Mail, signal?: AbortSignal): Promise<Classification>;
+  draftReply(mail: Mail, leadContext: string, signal?: AbortSignal): Promise<string>;
 }

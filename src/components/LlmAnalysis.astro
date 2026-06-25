@@ -1,5 +1,4 @@
 ---
-import { actions } from 'astro:actions';
 import type { Activity, LlmClassification } from '~/db/schema';
 
 // LLM panel for a single inbound email: a trigger that runs the (mock) provider, the
@@ -65,34 +64,131 @@ const INTENT_LABELS: Record<LlmClassification['intent'], string> = {
     )
   }
 
-  <form method="POST" action={actions.analyzeActivity}>
-    <input type="hidden" name="id" value={activity.id} />
-    <button type="submit" class="text-xs font-medium text-accent-text hover:underline">
-      {analysed ? 'Neu analysieren' : 'Klassifizieren / Antwort entwerfen'}
-    </button>
-  </form>
+  <div data-llm-control data-activity-id={activity.id}>
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="text-xs font-medium text-accent-text hover:underline disabled:opacity-50"
+        data-llm-submit
+      >
+        {analysed ? 'Neu analysieren' : 'Klassifizieren / Antwort entwerfen'}
+      </button>
+      <span class="flex items-center gap-1.5 text-xs text-muted" data-llm-status hidden aria-live="polite">
+        <span class="llm-spinner" aria-hidden="true"></span>
+        <span>Analysiere&#8230;</span>
+      </span>
+      <button
+        type="button"
+        class="text-xs font-medium text-muted hover:text-ink hover:underline"
+        data-llm-cancel
+        hidden
+      >
+        Abbrechen
+      </button>
+    </div>
+    <p class="mt-1.5 text-xs text-danger" role="alert" data-llm-error hidden></p>
+  </div>
 </div>
 
 <script>
-  // One delegated listener for the whole page; survives view transitions (the module
-  // runs once and the document persists). Copies the current textarea value — including
-  // any local edits — and flashes a confirmation.
+  // Plain fetch to the action endpoints — deliberately NO `astro:actions` import. That
+  // import pulls in a Vite-optimized dep whose hash changes on re-optimization in dev; a
+  // stale hash makes this module fail to load, dropping the listeners. Hitting /_actions
+  // directly keeps the script dependency-free, so it always initializes. Delegated on
+  // document to survive view transitions (module runs once; document persists).
+  const ACTIONS = '/_actions';
+
+  // Keyed by activity id: a run is in flight, and whether the user cancelled it (so the
+  // run's resulting abort error stays silent).
+  const loading = new Set<string>();
+  const cancelled = new Set<string>();
+
+  function setLoading(ctl: HTMLElement, isLoading: boolean) {
+    ctl.querySelector<HTMLButtonElement>('[data-llm-submit]')?.toggleAttribute('disabled', isLoading);
+    ctl.querySelector<HTMLElement>('[data-llm-status]')?.toggleAttribute('hidden', !isLoading);
+    ctl.querySelector<HTMLButtonElement>('[data-llm-cancel]')?.toggleAttribute('hidden', !isLoading);
+    if (isLoading) ctl.querySelector<HTMLElement>('[data-llm-error]')?.setAttribute('hidden', '');
+  }
+
+  function showError(ctl: HTMLElement, message: string) {
+    const el = ctl.querySelector<HTMLElement>('[data-llm-error]');
+    if (!el) return;
+    el.textContent = message;
+    el.removeAttribute('hidden');
+  }
+
   document.addEventListener('click', async (event) => {
     const target = event.target as HTMLElement;
-    const button = target.closest<HTMLButtonElement>('[data-copy-draft]');
-    if (!button) return;
 
-    const textarea = button
+    // Start an analysis. The server persists classification + draft on success; a slow
+    // cold model is fine — we just await the request and keep the spinner up.
+    const submit = target.closest<HTMLButtonElement>('[data-llm-submit]');
+    if (submit) {
+      const ctl = submit.closest<HTMLElement>('[data-llm-control]');
+      const id = ctl?.dataset.activityId;
+      if (!ctl || !id || loading.has(id)) return;
+
+      loading.add(id);
+      cancelled.delete(id);
+      setLoading(ctl, true);
+
+      const body = new FormData();
+      body.set('id', id);
+      let ok = false;
+      let message = '';
+      try {
+        const res = await fetch(`${ACTIONS}/analyzeActivity`, { method: 'POST', body });
+        ok = res.ok;
+        if (!ok) message = await res.json().then((j) => j?.message ?? '').catch(() => '');
+      } catch {
+        message = 'Verbindung zum Server fehlgeschlagen.';
+      }
+
+      loading.delete(id);
+      if (ok) {
+        // Reload to render the persisted classification + draft from the template.
+        window.location.reload();
+        return;
+      }
+      setLoading(ctl, false);
+      if (cancelled.has(id)) return; // user cancelled — not an error worth showing
+      showError(ctl, message || 'Analyse fehlgeschlagen. Läuft Ollama?');
+      return;
+    }
+
+    // Cancel a running analysis: a separate request that aborts the server-side LLM call
+    // (a dropped fetch alone won't — @astrojs/node ignores client disconnect). Mark the
+    // id so the run's resulting abort error stays silent, and reset the UI now.
+    const cancel = target.closest<HTMLButtonElement>('[data-llm-cancel]');
+    if (cancel) {
+      const ctl = cancel.closest<HTMLElement>('[data-llm-control]');
+      const id = ctl?.dataset.activityId;
+      if (!ctl || !id) return;
+      cancelled.add(id);
+      fetch(`${ACTIONS}/cancelAnalysis`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id }),
+      }).catch(() => {});
+      setLoading(ctl, false);
+      return;
+    }
+
+    // Copy the current draft — including any local edits — and flash a confirmation.
+    const copy = target.closest<HTMLButtonElement>('[data-copy-draft]');
+    if (!copy) return;
+
+    const textarea = copy
       .closest('[data-llm-analysis]')
       ?.querySelector<HTMLTextAreaElement>('[data-llm-draft]');
     if (!textarea) return;
 
     try {
       await navigator.clipboard.writeText(textarea.value);
-      const previous = button.textContent;
-      button.textContent = 'Kopiert ✓';
+      const previous = copy.textContent;
+      copy.textContent = 'Kopiert ✓';
       window.setTimeout(() => {
-        button.textContent = previous;
+        copy.textContent = previous;
       }, 1500);
     } catch {
       // Clipboard blocked (no permission / insecure context) — leave the draft selectable.
