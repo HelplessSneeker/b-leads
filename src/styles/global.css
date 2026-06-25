@@ -318,6 +318,29 @@
     color: var(--ink);
   }
 
+  /* Inline spinner while an LLM analysis request is in flight. Indigo accent =
+     an interaction is running; the pale track is the neutral border token. */
+  @keyframes llm-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .llm-spinner {
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: llm-spin 700ms linear infinite;
+  }
+  /* Reduced motion: keep a slow sweep (still conveys progress) rather than a
+     frozen, broken-looking partial ring. */
+  @media (prefers-reduced-motion: reduce) {
+    .llm-spinner {
+      animation-duration: 2400ms;
+    }
+  }
+
   /* Timeline node dots — filled with the saturated activity-hue (the chip's `fg`
      token), not the pale `bg` tint the .tag-act-* chips use, so the dot stays
      clearly visible on the page surface in both themes. State/type signal only,

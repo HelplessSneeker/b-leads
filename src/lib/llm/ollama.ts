@@ -64,16 +64,19 @@ export class OllamaProvider implements LLMProvider {
   });
   private readonly model = import.meta.env.OLLAMA_MODEL ?? process.env.OLLAMA_MODEL ?? 'qwen2.5:7b';
 
-  async classify(mail: Mail): Promise<Classification> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      temperature: 0,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: CLASSIFY_SYSTEM_PROMPT },
-        { role: 'user', content: `Betreff: ${mail.subject}\n\n${mail.body}` },
-      ],
-    });
+  async classify(mail: Mail, signal?: AbortSignal): Promise<Classification> {
+    const response = await this.client.chat.completions.create(
+      {
+        model: this.model,
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: CLASSIFY_SYSTEM_PROMPT },
+          { role: 'user', content: `Betreff: ${mail.subject}\n\n${mail.body}` },
+        ],
+      },
+      { signal },
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -99,18 +102,21 @@ export class OllamaProvider implements LLMProvider {
     };
   }
 
-  async draftReply(mail: Mail, leadContext: string): Promise<string> {
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      temperature: 0.5,
-      messages: [
-        { role: 'system', content: DRAFT_SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: `Kontext zum Lead:\n${leadContext}\n\nEingehende E-Mail:\nBetreff: ${mail.subject}\n\n${mail.body}`,
-        },
-      ],
-    });
+  async draftReply(mail: Mail, leadContext: string, signal?: AbortSignal): Promise<string> {
+    const response = await this.client.chat.completions.create(
+      {
+        model: this.model,
+        temperature: 0.5,
+        messages: [
+          { role: 'system', content: DRAFT_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: `Kontext zum Lead:\n${leadContext}\n\nEingehende E-Mail:\nBetreff: ${mail.subject}\n\n${mail.body}`,
+          },
+        ],
+      },
+      { signal },
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content?.trim()) {
