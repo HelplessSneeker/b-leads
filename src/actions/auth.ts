@@ -26,13 +26,4 @@ export const authActions = {
       return { sent: true };
     },
   }),
-
-  /** Clear the session. Consumed via a POST form on the login-status affordance. */
-  logout: defineAction({
-    accept: 'form',
-    handler: async (_input, ctx) => {
-      ctx.session?.destroy();
-      return { success: true };
-    },
-  }),
 };
