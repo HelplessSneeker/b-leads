@@ -93,8 +93,10 @@ setzt `/auth/verify` eine Astro-Session und leitet auf `/today`. Alles
 außer `/login`, `/auth/*` und den `requestLogin`/`logout`-Actions ist per
 Middleware (`src/middleware.ts`) geschützt.
 
-Mail-Versand: `MAIL_PROVIDER=mock` (Dev — Link im Server-Log) oder `brevo`
-(HTTP-API, benötigt `BREVO_API_KEY` + `AUTH_FROM_EMAIL`).
+Mail-Versand: `MAIL_PROVIDER=mock` (Dev — Link im Server-Log) oder `smtp`
+(nodemailer, benötigt `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS`
+und `AUTH_FROM_EMAIL`). Funktioniert mit jedem transaktionalen Anbieter, der
+SMTP spricht (Brevo, Postmark, Mailgun, SendGrid, eigenes Relay).
 
 ## ENV
 

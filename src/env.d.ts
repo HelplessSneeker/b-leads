@@ -17,8 +17,12 @@ interface ImportMetaEnv {
   readonly AUTH_TOKEN_SECRET?: string;
   readonly AUTH_TOKEN_TTL_MINUTES?: string;
   readonly APP_BASE_URL?: string;
-  readonly MAIL_PROVIDER?: 'mock' | 'brevo';
-  readonly BREVO_API_KEY?: string;
+  readonly MAIL_PROVIDER?: 'mock' | 'smtp';
+  readonly SMTP_HOST?: string;
+  readonly SMTP_PORT?: string;
+  readonly SMTP_SECURE?: string;
+  readonly SMTP_USER?: string;
+  readonly SMTP_PASS?: string;
   readonly AUTH_FROM_EMAIL?: string;
   readonly AUTH_FROM_NAME?: string;
 }

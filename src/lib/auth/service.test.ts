@@ -69,15 +69,17 @@ describe('requestLogin', () => {
   });
 
   it('propagates infra failures — so the action handler can normalise the shape', async () => {
-    // Swap in a broken mail provider to simulate Brevo down.
-    process.env.MAIL_PROVIDER = 'brevo';
-    process.env.BREVO_API_KEY = 'x';
-    process.env.AUTH_FROM_EMAIL = 'from@example.com';
-    resetMailProvider();
-    // No network expected — brevo.send() will fail on fetch. We just need it
-    // to throw; assert the row is still written before the throw (mail is
-    // last, so the token is committed and won't be delivered).
+    // Inject a broken mail provider directly — provider-agnostic, doesn't rely
+    // on a specific transport being wired up.
+    resetMailProvider({
+      send: async () => {
+        throw new Error('mail transport down');
+      },
+    });
     await expect(requestLogin(db, 'bfn@example.com')).rejects.toBeTruthy();
+    // Token row is committed *before* the mail send throws — the action
+    // handler in src/actions/auth.ts swallows the throw and returns a uniform
+    // response shape.
     expect(db.select().from(authTokens).all()).toHaveLength(1);
   });
 });
