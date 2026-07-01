@@ -10,6 +10,7 @@ import {
   UnsupportedActivityError,
   updateActivity as updateActivityCore,
 } from './activities';
+import { authActions } from './auth';
 import {
   ConflictError,
   createLead as createLeadCore,
@@ -69,6 +70,8 @@ const importRow = z.object({
 const analysisAborters = new Map<string, AbortController>();
 
 export const server = {
+  ...authActions,
+
   createLead: defineAction({
     accept: 'form',
     input: leadInput,

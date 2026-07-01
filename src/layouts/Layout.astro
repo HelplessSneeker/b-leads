@@ -1,4 +1,5 @@
 ---
+import { actions } from 'astro:actions';
 import { ClientRouter } from 'astro:transitions';
 import '~/styles/global.css';
 import CommandPalette from '~/components/CommandPalette.astro';
@@ -16,6 +17,8 @@ const nav = [
   { href: '/leads/new', label: 'Neuer Lead' },
   { href: '/leads/import', label: 'CSV-Import' },
 ];
+
+const sessionEmail = (await Astro.session?.get('email')) ?? null;
 ---
 
 <!doctype html>
@@ -62,6 +65,22 @@ const nav = [
           <span class="text-sm">Befehle</span>
           <kbd class="data text-[0.6875rem] text-muted">⌘K</kbd>
         </button>
+        {
+          sessionEmail && (
+            <form method="POST" action={actions.logout} class="flex items-center gap-2">
+              <span class="data text-[0.6875rem] text-muted" title={sessionEmail}>
+                {sessionEmail}
+              </span>
+              <button
+                type="submit"
+                class="text-sm text-muted transition-colors hover:text-ink"
+                aria-label="Abmelden"
+              >
+                Logout
+              </button>
+            </form>
+          )
+        }
       </nav>
     </header>
     <main class="mx-auto w-full min-h-0 max-w-6xl flex-1 overflow-y-auto px-2 py-8">
