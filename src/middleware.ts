@@ -1,17 +1,17 @@
 import { defineMiddleware } from 'astro:middleware';
+import { runAuthPreflightOnce } from '~/lib/auth/preflight';
 
 /**
  * Session guard. Every request needs a session-userId except:
  *   - /login (request form + POST action-return)
- *   - /auth/*   (magic-link verify endpoint)
- *   - /_actions/auth.* (Astro Action endpoints for requestLogin / logout —
- *     logout runs on an authenticated request, but Astro serves the action
- *     under /_actions, and we want requestLogin reachable while logged out)
+ *   - /auth/*   (magic-link verify endpoint, POST /auth/logout)
+ *   - /_actions/auth.requestLogin (Astro Action endpoint, reachable while
+ *     logged out for the magic-link request)
  *   - /_astro/*, /favicon.ico and other static prefixes served by Astro itself
  */
 const PUBLIC_PREFIXES = ['/login', '/auth/', '/_astro/', '/_image', '/_server-islands/'];
 const PUBLIC_PATHS = new Set(['/favicon.ico', '/robots.txt']);
-const PUBLIC_ACTIONS = new Set(['requestLogin', 'logout']);
+const PUBLIC_ACTIONS = new Set(['requestLogin']);
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -26,6 +26,7 @@ function isPublic(pathname: string): boolean {
 }
 
 export const onRequest = defineMiddleware(async (ctx, next) => {
+  runAuthPreflightOnce();
   if (isPublic(ctx.url.pathname)) return next();
 
   const userId = await ctx.session?.get('userId');
