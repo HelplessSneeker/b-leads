@@ -1,7 +1,8 @@
 # b-leads
 
-Lead-Tracking-/CRM-Tool für eigenen Cold-Outreach. Single-user, läuft
-Tailscale-only auf einem Personal Server (Coolify) — **keine Auth im Code**.
+Lead-Tracking-/CRM-Tool für eigenen Cold-Outreach. Läuft Tailscale-only auf
+einem Personal Server (Coolify). Multi-User via Magic-Link + Email-Allowlist
+(siehe [Auth](#auth) unten).
 
 ## Stack
 
@@ -77,12 +78,32 @@ data/             SQLite-DB (gitignored)
 - **replies** — id, lead_id (FK, cascade), direction (`inbound | outbound`),
   subject, body, received_at?/sent_at?, llm_classification? (JSON), llm_draft?,
   created_at
+- **users** — id, email (unique), created_at, last_login_at?
+- **auth_tokens** — id, token_hash (unique), email, expires_at, consumed_at?,
+  created_at
+
+## Auth
+
+Magic-Link + Email-Allowlist. Nur Adressen, die in `AUTH_ALLOWLIST` stehen,
+können einen Login-Link anfordern; alle anderen Requests werden still
+verworfen (keine Enumeration). Der Link ist HMAC-signiert
+(`AUTH_TOKEN_SECRET`, ≥ 32 Byte), single-use (Hash in `auth_tokens`) und
+TTL-begrenzt (`AUTH_TOKEN_TTL_MINUTES`, default 15 Minuten). Nach Klick
+setzt `/auth/verify` eine Astro-Session und leitet auf `/today`. Alles
+außer `/login`, `/auth/*` und den `requestLogin`/`logout`-Actions ist per
+Middleware (`src/middleware.ts`) geschützt.
+
+Mail-Versand: `MAIL_PROVIDER=mock` (Dev — Link im Server-Log) oder `smtp`
+(nodemailer, benötigt `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS`
+und `AUTH_FROM_EMAIL`). Funktioniert mit jedem transaktionalen Anbieter, der
+SMTP spricht (Brevo, Postmark, Mailgun, SendGrid, eigenes Relay).
 
 ## ENV
 
-Siehe [`.env.example`](./.env.example). Phase 1 braucht nur `DB_PATH` und
-`LLM_PROVIDER=mock`. IMAP- und LLM-Provider-Variablen sind für Phase 2/3
-dokumentiert (auskommentiert).
+Siehe [`.env.example`](./.env.example). Phase 1 braucht `DB_PATH`,
+`LLM_PROVIDER=mock` sowie die Auth-Variablen (`AUTH_ALLOWLIST`,
+`AUTH_TOKEN_SECRET`, `APP_BASE_URL`, `MAIL_PROVIDER`). IMAP- und
+LLM-Provider-Variablen sind für Phase 2/3 dokumentiert (auskommentiert).
 
 ## Phasen-Roadmap
 

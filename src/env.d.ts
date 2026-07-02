@@ -13,6 +13,32 @@ interface ImportMetaEnv {
   readonly IMAP_USER?: string;
   readonly IMAP_PASSWORD?: string;
   readonly IMAP_TLS?: string;
+  readonly AUTH_ALLOWLIST?: string;
+  readonly AUTH_TOKEN_SECRET?: string;
+  readonly AUTH_TOKEN_TTL_MINUTES?: string;
+  readonly APP_BASE_URL?: string;
+  readonly MAIL_PROVIDER?: 'mock' | 'smtp';
+  readonly SMTP_HOST?: string;
+  readonly SMTP_PORT?: string;
+  readonly SMTP_SECURE?: string;
+  readonly SMTP_USER?: string;
+  readonly SMTP_PASS?: string;
+  readonly AUTH_FROM_EMAIL?: string;
+  readonly AUTH_FROM_NAME?: string;
+}
+
+// Astro reads these via ambient declaration merging (Astro.session.get/set,
+// Astro.locals). Biome cannot see the usage and flags them as unused.
+namespace App {
+  // biome-ignore lint/correctness/noUnusedVariables: ambient Astro augmentation
+  interface SessionData {
+    userId: string;
+    email: string;
+  }
+  // biome-ignore lint/correctness/noUnusedVariables: ambient Astro augmentation
+  interface Locals {
+    userId?: string;
+  }
 }
 
 interface ImportMeta {

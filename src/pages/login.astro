@@ -1,0 +1,64 @@
+---
+import { actions } from 'astro:actions';
+import '~/styles/global.css';
+
+const result = Astro.getActionResult(actions.requestLogin);
+const sent = result && !result.error && result.data?.sent === true;
+
+// Already logged in? Straight to /today.
+if (Astro.session && (await Astro.session.get('userId'))) {
+  return Astro.redirect('/today');
+}
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — b-leads</title>
+  </head>
+  <body class="flex min-h-screen items-center justify-center bg-bg text-ink">
+    <main class="w-full max-w-sm px-4">
+      <h1 class="mb-1 text-lg font-semibold tracking-tight">b-leads</h1>
+      <p class="mb-6 text-sm text-muted">Login-Link per E-Mail</p>
+
+      {
+        sent ? (
+          <div class="rounded-sm border border-border bg-surface p-4 text-sm">
+            <p class="mb-1 font-medium">Link verschickt.</p>
+            <p class="text-muted">
+              Falls die Adresse berechtigt ist, findest du gleich eine Mail mit einem Login-Link.
+              Der Link ist einmalig gültig und läuft in wenigen Minuten ab.
+            </p>
+          </div>
+        ) : (
+          <form method="POST" action={actions.requestLogin} class="space-y-3">
+            <label class="block text-sm">
+              <span class="mb-1 block text-muted">E-Mail-Adresse</span>
+              <input
+                type="email"
+                name="email"
+                required
+                autocomplete="email"
+                autofocus
+                class="data w-full rounded-sm border border-border bg-surface px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+              />
+            </label>
+            {result?.error && (
+              <p class="text-sm text-red-600">
+                {result.error.message ?? 'Anfrage konnte nicht verarbeitet werden.'}
+              </p>
+            )}
+            <button
+              type="submit"
+              class="w-full rounded-sm border border-border bg-ink px-3 py-1.5 text-sm font-medium text-bg transition-colors hover:bg-accent"
+            >
+              Login-Link anfordern
+            </button>
+          </form>
+        )
+      }
+    </main>
+  </body>
+</html>

@@ -6,8 +6,9 @@ Menschen: README.md + PRODUCT.md + DESIGN.md.
 ## Stack (Kurz)
 
 Astro 6 (server output, `@astrojs/node` standalone) + React Islands +
-Tailwind 4 + SQLite/Drizzle + Vitest + Biome. Single-user, Tailscale-only,
-keine Auth im Code. Node ≥ 22.
+Tailwind 4 + SQLite/Drizzle + Vitest + Biome. Multi-user via Magic-Link +
+Email-Allowlist (`src/lib/auth/`, `src/middleware.ts`), Tailscale-only
+Deploy. Node ≥ 22.
 
 Details: `README.md`.
 
@@ -65,10 +66,22 @@ Vor Arbeitsbeginn Block-Back an bfn, wenn:
 `LLM_PROVIDER` in `.env` schaltet. Neue Provider gegen dasselbe Interface —
 Call-Sites bleiben provider-agnostisch.
 
+## Auth
+
+Magic-Link + Email-Allowlist. Nur Adressen aus `AUTH_ALLOWLIST` können einen
+Link anfordern; alles andere wird still verworfen (kein User-Enumeration-
+Signal). Tokens sind HMAC-signiert (`AUTH_TOKEN_SECRET`), single-use
+(SHA-256-Hash in `auth_tokens`), TTL default 15 Minuten. Session via Astro
+Sessions (`fsLite` Driver aus `@astrojs/node`), Middleware in
+`src/middleware.ts` schützt alles außer `/login`, `/auth/*` und der
+`requestLogin`-Action (Logout ist ein POST-Endpoint unter `/auth/logout`
+mit server-side Redirect nach `/login`). Mail via
+`MAIL_PROVIDER=mock|smtp` — `mock` loggt den Link, `smtp` versendet über
+nodemailer (SMTP_HOST/PORT/USER/PASS). Provider-agnostisch, konfigurier-
+bar für Brevo, Postmark, Mailgun, SendGrid oder eigenes Relay.
+
 ## Was NICHT tun
 
 - Kein UI-Feinschliff (Typografie, Color-Tokens, Motion, Spacing) im
   Implement-Modus. Das ist eine separate Design-Karte.
 - Keine Merges in `dev` oder `main` — auch nicht bei grünem CI.
-- Kein Auth-/Session-Code hinzufügen. Repo läuft Tailscale-only per
-  Design.

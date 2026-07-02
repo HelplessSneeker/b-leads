@@ -71,7 +71,37 @@ export const activities = sqliteTable(
   (table) => [index('activities_lead_id_idx').on(table.leadId)],
 );
 
+export const users = sqliteTable('users', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  email: text('email').notNull().unique(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
+});
+
+// Magic-link tokens. Only the SHA-256 hash is stored so a DB leak
+// cannot be replayed against /auth/verify.
+export const authTokens = sqliteTable(
+  'auth_tokens',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    tokenHash: text('token_hash').notNull().unique(),
+    email: text('email').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    consumedAt: integer('consumed_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  },
+  (table) => [index('auth_tokens_email_idx').on(table.email)],
+);
+
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type AuthToken = typeof authTokens.$inferSelect;
+export type NewAuthToken = typeof authTokens.$inferInsert;
